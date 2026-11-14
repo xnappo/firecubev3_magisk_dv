@@ -10,6 +10,11 @@
 #   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base (the
 #                                  Magisk app's Action button runs this)
 #   lldv reset [maxlum|primaries]  remove the override(s); the module's lldv.conf defaults apply again
+#   lldv edid [orig]               the EDID as hex, 16 bytes per line, ready to paste into an EDID analyzer.
+#                                  Default = the live EDID the kernel holds now (includes the injected block);
+#                                  `orig` = the display's own EDID as the module saved it before injecting.
+#                                  Only the hex goes to stdout; a one-line summary (blocks, header, checksums)
+#                                  goes to stderr, so `lldv edid > edid.txt` captures just the hex.
 #   lldv log [lines]               tail of /data/local/tmp/lldv.log
 #
 # Changes are written to /data/adb/lldv.conf (survives module updates); the running watcher picks them up within
@@ -19,6 +24,9 @@ MODDIR=${LLDV_MODDIR:-${0%/*}}
 [ -f "$MODDIR/lldv_cfg.sh" ] || MODDIR=/data/adb/modules/firecube_lldv
 E=/sys/class/amhdmitx/amhdmitx0
 LOG=${LLDV_LOG:-/data/local/tmp/lldv.log}
+# where `lldv edid` reads from (overridable for the unit tests)
+EDID_LIVE=${LLDV_RAWEDID:-$E/rawedid}
+EDID_ORIG=${LLDV_ORIGEDID:-/dev/lldv_o}
 
 . "$MODDIR/lldv_lum.sh"
 . "$MODDIR/lldv_gamut.sh"
@@ -185,12 +193,82 @@ cmd_reset() {
     after_change
 }
 
+# edid_summary HEX LABEL: one line on stderr: block count, header, per-block checksums. Expects uppercase hex.
+edid_summary() {
+    _eh=$1
+    _el=${#_eh}
+    _nb=$((_el / 256))
+    _msg="# $2: $_nb blocks ($((_el / 2)) bytes)"
+    [ $((_el % 256)) -eq 0 ] || _msg="$_msg, WARNING not a whole number of 128-byte blocks"
+    [ "${_eh:0:16}" = "00FFFFFFFFFFFF00" ] || _msg="$_msg, BAD HEADER"
+    _bad=
+    _b=0
+    while [ $_b -lt $_nb ]; do
+        _blk=${_eh:$((_b * 256)):256}
+        _s=0
+        _i=0
+        while [ $_i -lt 256 ]; do
+            _s=$((_s + 0x${_blk:$_i:2}))
+            _i=$((_i + 2))
+        done
+        [ $((_s % 256)) -eq 0 ] || _bad="$_bad $_b"
+        _b=$((_b + 1))
+    done
+    if [ -n "$_bad" ]; then
+        _msg="$_msg, BAD CHECKSUM in block(s):$_bad"
+    else
+        _msg="$_msg, header and checksums ok"
+    fi
+    echo "$_msg" >&2
+}
+
+# edid_lines HEX: 16 bytes per line, bytes separated by single spaces
+edid_lines() {
+    _lh=$1
+    _o=0
+    while [ $_o -lt ${#_lh} ]; do
+        _ln=${_lh:$_o:32}
+        _out=
+        _i=0
+        while [ $_i -lt ${#_ln} ]; do
+            _out="$_out${_ln:$_i:2} "
+            _i=$((_i + 2))
+        done
+        echo "${_out% }"
+        _o=$((_o + 32))
+    done
+}
+
+cmd_edid() {
+    case "$1" in
+        "" | live)
+            _what="live EDID"
+            # cat, not "tr < file": a redirect that fails prints a raw shell error before our message
+            _hex=$(cat "$EDID_LIVE" 2>/dev/null | tr -d '\r\n ')
+            [ -n "$_hex" ] || die "no EDID available from $EDID_LIVE (display disconnected, or the HDMI driver is not ready)"
+            ;;
+        orig)
+            _what="original EDID (as saved before the module injected)"
+            [ -s "$EDID_ORIG" ] || die "no saved original EDID: the module has not injected since boot, so the live EDID is already the display's own (use: lldv edid)"
+            _hex=$(od -An -v -tx1 "$EDID_ORIG" | tr -d ' \012')
+            ;;
+        *) die "usage: lldv edid [orig]" ;;
+    esac
+    case "$_hex" in
+        *[!0-9A-Fa-f]*) die "the EDID source did not contain plain hex" ;;
+    esac
+    _hex=$(echo "$_hex" | tr 'a-f' 'A-F')
+    edid_summary "$_hex" "$_what"
+    edid_lines "$_hex"
+}
+
 case "$1" in
     show | "") cmd_show ;;
     list) cmd_list ;;
     set) shift; cmd_set "$@" ;;
     cycle) cmd_cycle ;;
     reset) shift; cmd_reset "$@" ;;
+    edid) shift; cmd_edid "$@" ;;
     log) tail -n "${2:-30}" "$LOG" ;;
-    *) die "unknown command '$1' (show, list, set, cycle, reset, log)" ;;
+    *) die "unknown command '$1' (show, list, set, cycle, reset, edid, log)" ;;
 esac

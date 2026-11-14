@@ -102,7 +102,68 @@ check() {
   check "reset primaries removes file" "$($L reset primaries >/dev/null; [ -f $LLDV_OVERRIDE ] && echo exists || echo gone)" "gone"
   check "reset all"          "$($L set maxlum 500 >/dev/null; $L reset >/dev/null; [ -f $LLDV_OVERRIDE ] && echo exists || echo gone)" "gone"
   check "log"                "$($L log 5)" "11-14 00:00:00 test line"
-  check "unknown command"    "$($L frobnicate 2>&1 | head -1)" "lldv: unknown command 'frobnicate' (show, list, set, cycle, reset, log)"
+  check "unknown command"    "$($L frobnicate 2>&1 | head -1)" "lldv: unknown command 'frobnicate' (show, list, set, cycle, reset, edid, log)"
+
+  echo "== lldv edid"
+  # test inputs: the 2-block EDID of the development TV (captures/edid_orig.bin, pushed to /data/local/tmp)
+  SRC=$T/edid_orig.bin
+  if [ "$(wc -c < $SRC 2>/dev/null)" != "256" ]; then
+      FAIL=$((FAIL + 1)); echo "FAIL edid tests need $SRC (256 bytes)"
+  else
+      od -An -v -tx1 $SRC | tr -d ' \012' > $U/live.hex
+      echo >> $U/live.hex
+      export LLDV_RAWEDID=$U/live.hex LLDV_ORIGEDID=$U/orig.bin
+      rm -f $U/orig.bin
+      $L edid > $U/edid_out.txt 2> $U/edid_err.txt
+      check "edid exit status"     "$?" "0"
+      check "edid line count"      "$(wc -l < $U/edid_out.txt | tr -d ' ')" "16"
+      check "edid first line"      "$(head -1 $U/edid_out.txt)" "00 FF FF FF FF FF FF 00 59 3A 39 10 01 01 01 01"
+      check "edid last line"       "$(tail -1 $U/edid_out.txt)" "0A E3 05 E0 00 00 00 00 00 00 00 00 00 00 00 14"
+      check "edid stdout is only hex" "$(grep -c -v '^[0-9A-F][0-9A-F]\( [0-9A-F][0-9A-F]\)*$' $U/edid_out.txt)" "0"
+      check "edid stderr summary"  "$(cat $U/edid_err.txt)" "# live EDID: 2 blocks (256 bytes), header and checksums ok"
+      # this toybox's `xxd -r -p` silently drops UPPERCASE hex (00 FF FF -> 00), so lowercase it before reversing
+      tr -d ' \n' < $U/edid_out.txt | tr 'A-F' 'a-f' | xxd -r -p > $U/edid_back.bin
+      check "edid round trip"      "$(cmp $U/edid_back.bin $SRC >/dev/null 2>&1 && echo same || echo different)" "same"
+      check "edid round trip size" "$(wc -c < $U/edid_back.bin | tr -d ' ')" "256"
+      check "edid live explicit"   "$($L edid live 2>/dev/null | head -1)" "00 FF FF FF FF FF FF 00 59 3A 39 10 01 01 01 01"
+      # lowercase / CRLF input from the kernel node is normalised
+      tr 'A-F' 'a-f' < $U/live.hex | sed 's/$/\r/' > $U/live_lc.hex
+      LLDV_RAWEDID=$U/live_lc.hex $L edid > $U/edid_lc.txt 2>/dev/null
+      check "edid lowercase+CRLF normalised" "$(head -1 $U/edid_lc.txt)" "00 FF FF FF FF FF FF 00 59 3A 39 10 01 01 01 01"
+      # a bad checksum in block 1 and a bad header are reported, not hidden
+      # the last byte of the development EDID is its block-1 checksum (0x14): rewriting it to 0x15 must be flagged
+      { printf '%s' "$(tr -d '\n' < $U/live.hex | cut -c1-510)"; echo 15; } > $U/live_badsum.hex
+      check "edid bad checksum flagged" "$(LLDV_RAWEDID=$U/live_badsum.hex $L edid 2>&1 >/dev/null)" "# live EDID: 2 blocks (256 bytes), BAD CHECKSUM in block(s): 1"
+      # and rewriting it to its true value keeps the summary clean
+      { printf '%s' "$(tr -d '\n' < $U/live.hex | cut -c1-510)"; echo 14; } > $U/live_goodsum.hex
+      check "edid good checksum ok" "$(LLDV_RAWEDID=$U/live_goodsum.hex $L edid 2>&1 >/dev/null)" "# live EDID: 2 blocks (256 bytes), header and checksums ok"
+      { printf '11'; tr -d '\n' < $U/live.hex | cut -c3-; } > $U/live_badhdr.hex
+      check "edid bad header flagged" "$(LLDV_RAWEDID=$U/live_badhdr.hex $L edid 2>&1 >/dev/null | grep -c 'BAD HEADER')" "1"
+      printf 'ZZ\n' > $U/live_junk.hex
+      check "edid non-hex rejected" "$(LLDV_RAWEDID=$U/live_junk.hex $L edid 2>&1 | head -1)" "lldv: the EDID source did not contain plain hex"
+      : > $U/live_empty.hex
+      LLDV_RAWEDID=$U/live_empty.hex $L edid > $U/e1.txt 2>&1
+      check "edid empty source: one clean line" "$(wc -l < $U/e1.txt | tr -d ' ')" "1"
+      check "edid empty source: message"        "$(grep -c '^lldv: no EDID available from ' $U/e1.txt)" "1"
+      LLDV_RAWEDID=$U/nonexistent $L edid > $U/e2.txt 2>&1
+      check "edid missing source: one clean line" "$(wc -l < $U/e2.txt | tr -d ' ')" "1"
+      check "edid missing source: message"        "$(grep -c '^lldv: no EDID available from ' $U/e2.txt)" "1"
+      # orig
+      $L edid orig > $U/e3.txt 2>&1
+      check "edid orig without saved file: one clean line" "$(wc -l < $U/e3.txt | tr -d ' ')" "1"
+      check "edid orig without saved file: message" "$(grep -c '^lldv: no saved original EDID: ' $U/e3.txt)" "1"
+      cp $SRC $U/orig.bin
+      check "edid orig first line" "$($L edid orig 2>/dev/null | head -1)" "00 FF FF FF FF FF FF 00 59 3A 39 10 01 01 01 01"
+      check "edid orig summary"    "$($L edid orig 2>&1 >/dev/null)" "# original EDID (as saved before the module injected): 2 blocks (256 bytes), header and checksums ok"
+      check "edid usage"           "$($L edid frobnicate 2>&1 | head -1)" "lldv: usage: lldv edid [orig]"
+      # a 3-block (injected) EDID: 24 lines, 3 blocks
+      if [ "$(wc -c < $T/edid_nodv_plus_dv3.bin 2>/dev/null)" = "384" ]; then
+          od -An -v -tx1 $T/edid_nodv_plus_dv3.bin | tr -d ' \012' > $U/live3.hex
+          check "edid 3 blocks lines"  "$(LLDV_RAWEDID=$U/live3.hex $L edid 2>/dev/null | wc -l | tr -d ' ')" "24"
+          check "edid 3 blocks summary" "$(LLDV_RAWEDID=$U/live3.hex $L edid 2>&1 >/dev/null)" "# live EDID: 3 blocks (384 bytes), header and checksums ok"
+      fi
+      unset LLDV_RAWEDID LLDV_ORIGEDID
+  fi
 
   echo "== summary: PASS=$PASS FAIL=$FAIL"
 } >> $O 2>&1

@@ -25,6 +25,9 @@ already made. Everything here was observed on the real device unless marked *(in
   under both (`tools/dev/dev_run_units.sh`). `${v:off:len}` and `$((0x..))` work in both.
 - **`xxd -p | tr -d '\n'` leaves newlines in** on this toybox (256 bytes came out as 520 chars). Use
   `od -An -v -tx1 FILE | tr -d ' \012'` to get a hex string. `xxd -r -p` is fine.
+- **This toybox's `xxd -r -p` silently drops UPPERCASE hex** (`00 FF FF` becomes one byte `00`, no error). `lldv edid`
+  prints uppercase for analyzers, so lowercase it (`tr 'A-F' 'a-f'`) before reversing. The module's own hex strings
+  are lowercase.
 - **Android's awk is 20121220 and crashes ("illegal jump type 339")** on code that works elsewhere. No awk in the module.
 - `dv_cap` is masked by `hdr_priority_mode`; **`dv_cap2` is the unmasked copy**, which is why the code reads it.
   The "no DV" text is `The Rx don't support DolbyVision`, which contains the word "DolbyVision": match on
@@ -63,7 +66,9 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 - `module/lldv_cfg.sh`: settings layers. `lldv_effective` computes `VSVDB_EFF`. Sourced files run as shell, hence the
   ownership/permission check on `/data/adb/lldv.conf`.
 - `module/lldv_guard.sh`: boot-loop guard, state in `/data/adb/lldv_boot_state` (`<boot_id> <count> <tripped>`).
-- `module/lldv`: the user command. `module/action.sh`: Magisk Action button (= `lldv cycle` + `show`).
+- `module/lldv`: the user command (`show list set cycle reset edid log`). `lldv edid` is read-only: stdout is only hex,
+  the summary goes to stderr, and it never writes to the `edid` node. `module/action.sh`: Magisk Action button
+  (= `lldv cycle` + `show`).
 
 ## Workflow
 
@@ -73,7 +78,9 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   `/data/local/tmp/lldv_mod/` to hold the module and `/dev/ed` to hold the display's own 256-byte EDID.
 - Package: `python3 tools/build_zip.py module dist/<name>.zip` (LF endings, exec bits). Install with
   `magisk --install-module`; Magisk applies it at the next reboot.
-- Unit tests: `tools/dev/dev_run_units.sh` (47 checks, both shells). Live tests need the in-line DV/non-DV box.
+- Unit tests: `tools/dev/dev_run_units.sh` (72 checks, both shells; push `captures/edid_orig.bin` and
+  `edid_nodv_plus_dv3.bin` to `/data/local/tmp` first, the `lldv edid` tests read them). Live tests need the in-line
+  DV/non-DV box. `tools/dev/dev_check_edid_cmd.sh` compares `lldv edid` with the EDID files the watcher loaded.
 - **Windows host gotchas:** shell scripts must be LF (`.gitattributes` enforces it). adb output often was not
   captured by the terminal, so tests write results to a file that is then read. Run long device commands in the
   background (`nohup ... &`) and poll a result file. PowerShell expands `$(...)` and splits on `|` inside quoted adb

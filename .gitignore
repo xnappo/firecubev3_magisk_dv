@@ -26,6 +26,8 @@ captures/*
 !captures/test62_action.txt
 !captures/test64_standby_after.txt
 !captures/test66_standby_window.txt
+!captures/test70_units_edid.txt
+!captures/test71_edid_cmd_live.txt
 
 *.tmp
 *.log

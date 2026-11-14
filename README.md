@@ -36,12 +36,12 @@ Details that were found the hard way are in [AGENT.md](AGENT.md).
 
 ## Install
 
-Build the zip (`python3 tools/build_zip.py module dist/firecube_lldv-v0.2.0.zip`), then either install it from the
+Build the zip (`python3 tools/build_zip.py module dist/firecube_lldv-v0.2.1.zip`), then either install it from the
 Magisk app (Modules, Install from storage) or, over adb:
 
 ```
-adb push dist/firecube_lldv-v0.2.0.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.0.zip"
+adb push dist/firecube_lldv-v0.2.1.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.1.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -67,7 +67,23 @@ The `lldv` command (run as root) changes them. The running watcher picks the cha
 | `lldv set primaries <name>` | `BT709`, `BT2020`, `DCI-P3`, `LS12000`, or `base` |
 | `lldv cycle` | next primaries preset (the Magisk app's **Action** button runs this) |
 | `lldv reset [maxlum\|primaries]` | remove the override(s) |
+| `lldv edid [orig]` | the EDID as hex, 16 bytes per line, to paste into an EDID analyzer (see below) |
 | `lldv log [n]` | tail of `/data/local/tmp/lldv.log` |
+
+**`lldv edid`** prints the live EDID the kernel holds now, which includes the injected block (3 blocks, 384 bytes,
+when the module has injected). `lldv edid orig` prints the display's own EDID as the module saved it just before
+injecting; it only exists after an injection since boot. Only hex goes to stdout, so `lldv edid > edid.txt` captures
+just the hex; a one-line summary (block count, header, per-block checksums, with `BAD HEADER` / `BAD CHECKSUM`
+flagged) goes to stderr. It only reads; it never writes to the kernel's `edid` node.
+
+```
+00 FF FF FF FF FF FF 00 34 A3 01 00 01 00 00 00
+04 19 01 03 80 73 41 78 0A CF 74 A3 57 4C B0 23
+...
+```
+
+The output is uppercase, space-separated hex. Analyzers that take a hex dump accept this directly. To turn it back
+into a binary file on the Cube, lowercase it first: this toybox's `xxd -r -p` silently drops uppercase hex.
 
 Example: `su -c /data/adb/modules/firecube_lldv/lldv set primaries DCI-P3`
 
@@ -103,7 +119,8 @@ Tested on the Cube with an HDMI box in line that presents either a DV or a non-D
 | Live settings change (`lldv set`, Action button) | each change re-injected the new block, no reboot |
 | All four primaries presets and maxLum | the VSVDB the kernel reports matches the expected bytes |
 | Boot-loop guard counting and its 5-minute clear | real boots; the guard *tripping* was not exercised |
-| Shell code on the device | 47 unit checks pass under both the adb shell and Magisk's busybox ash |
+| Shell code on the device | 72 unit checks pass under both the adb shell and Magisk's busybox ash |
+| `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded (live) and to the saved original |
 
 | NOT verified | Notes |
 |---|---|
