@@ -1,0 +1,7 @@
+# The module's shell scripts run on Android: a CRLF checkout on Windows would break them
+# ("sh: not found" / bad interpreter), so everything text is stored and checked out with LF.
+* text=auto eol=lf
+*.bin binary
+*.zip binary
+*.tar binary
+*.bz2 binary

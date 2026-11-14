@@ -1,0 +1,20 @@
+uptime: 1077.14 7486.12
+hpd_state: 1  rawedid_chars: 769
+reported: VSVDB: eb0146d00049034889627697  status: DolbyVision-Lowlatency
+android:     mHdrCapabilities=[  1  2  ]
+watcher pid: 639  running: 0
+wakefulness:   mWakefulness=Awake
+== kernel log since the baseline (hdmi / suspend / resume / edid / plug lines)
+[ 1053.746599] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=1
+[ 1053.830390] AMDV: new vsvdb[12]:
+[ 1054.568689] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi_audio,SWITCH_STATE=1
+== watcher log since the baseline
+11-14 16:36:54 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:36:59 injected Dolby VSVDB eb0146d00049034889627697 (EDID now 384 bytes, kernel reports eb0146d00049034889627697) and cycled fake_plug
+== pstore
+total 0
+drwxr-x--- 2 root root      0 2026-11-14 16:19 .
+drwxr-xr-x 8 root root      0 2026-11-14 16:19 ..
+-r--r--r-- 1 root root 919292 2026-11-14 16:19 console-ramoops-01
+-r--r--r-- 1 root root 537719 2026-11-14 13:35 dmesg-ramoops-0
+DONE

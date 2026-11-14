@@ -1,0 +1,47 @@
+base block: eb0146d0004903485798a953
+
+preset          Rx                 Ry                 Gx                 Gy                 Bx                 By               
+BT709           0.6400>164=0.6406  0.3300> 84=0.3281  0.3000> 77=0.3008  0.6000>154=0.6016  0.1500> 38=0.1484  0.0600> 15=0.0586
+BT2020          0.7080>181=0.7070  0.2920> 75=0.2930  0.1700> 44=0.1719  0.7970>204=0.7969  0.1310> 34=0.1328  0.0460> 12=0.0469
+DCI-P3          0.6800>174=0.6797  0.3200> 82=0.3203  0.2650> 68=0.2656  0.6900>177=0.6914  0.1500> 38=0.1484  0.0600> 15=0.0586
+LS12000 Native  0.6670>171=0.6680  0.3310> 85=0.3320  0.3140> 80=0.3125  0.6720>172=0.6719  0.1480> 38=0.1484  0.0420> 11=0.0430
+(request > code = stored value; '!' would mean outside the encodable range)
+
+PRESET bt709 eb0146d0004903489b3426a7
+PRESET bt2020 eb0146d0004903485998aa5c
+PRESET dcip3 eb0146d00049034889627697
+PRESET ls12000 eb0146d000490348a1585eab
+
+decoded base block primaries (codes): [181, 74, 43, 204, 33, 11]
+
+##### decode of bt709 -> eb0146d0004903489b3426a7
+Interface        : 0  (low-latency only)
+Target Max PQ    : code 9 -> PQ12 2640 -> 371.6 cd/m^2
+10/12b 4:4:4     : 2
+primaries Rx,Ry : 0.64062500, 0.32812500
+primaries Gx,Gy : 0.30078125, 0.60156250
+primaries Bx,By : 0.14843750, 0.05859375
+
+##### decode of bt2020 -> eb0146d0004903485998aa5c
+Interface        : 0  (low-latency only)
+Target Max PQ    : code 9 -> PQ12 2640 -> 371.6 cd/m^2
+10/12b 4:4:4     : 2
+primaries Rx,Ry : 0.70703125, 0.29296875
+primaries Gx,Gy : 0.17187500, 0.79687500
+primaries Bx,By : 0.13281250, 0.04687500
+
+##### decode of dcip3 -> eb0146d00049034889627697
+Interface        : 0  (low-latency only)
+Target Max PQ    : code 9 -> PQ12 2640 -> 371.6 cd/m^2
+10/12b 4:4:4     : 2
+primaries Rx,Ry : 0.67968750, 0.32031250
+primaries Gx,Gy : 0.26562500, 0.69140625
+primaries Bx,By : 0.14843750, 0.05859375
+
+##### decode of ls12000 -> eb0146d000490348a1585eab
+Interface        : 0  (low-latency only)
+Target Max PQ    : code 9 -> PQ12 2640 -> 371.6 cd/m^2
+10/12b 4:4:4     : 2
+primaries Rx,Ry : 0.66796875, 0.33203125
+primaries Gx,Gy : 0.31250000, 0.67187500
+primaries Bx,By : 0.14843750, 0.04296875

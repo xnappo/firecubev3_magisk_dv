@@ -1,0 +1,43 @@
+767.78 5216.70
+=====OVERRIDE
+-rw------- 1 root root 17 2026-11-14 16:31 /data/adb/lldv.conf
+PRIMARIES=DCI-P3
+=====LOG
+11-14 16:19:35 watcher started (pid 639, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 16:19:38 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:19:52 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:21:49 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:21:54 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:24:26 boot guard: stable for 5 minutes, counter cleared
+11-14 16:28:41 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:28:46 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:30:36 settings changed: injected eb0146d0004903485798a953 -> wanted eb0146d0004903489b3426a7
+11-14 16:30:40 settings changed, re-injected Dolby VSVDB eb0146d0004903489b3426a7 (EDID now 384 bytes, kernel reports eb0146d0004903489b3426a7) and cycled fake_plug
+11-14 16:30:57 settings changed: injected eb0146d0004903489b3426a7 -> wanted eb0146d0004903485998aa5c
+11-14 16:31:01 settings changed, re-injected Dolby VSVDB eb0146d0004903485998aa5c (EDID now 384 bytes, kernel reports eb0146d0004903485998aa5c) and cycled fake_plug
+11-14 16:31:20 settings changed: injected eb0146d0004903485998aa5c -> wanted eb0146d00049034889627697
+11-14 16:31:24 settings changed, re-injected Dolby VSVDB eb0146d00049034889627697 (EDID now 384 bytes, kernel reports eb0146d00049034889627697) and cycled fake_plug
+=====STATE
+DolbyVision RX support list:
+VSVDB: eb0146d00049034889627697
+DolbyVision-Lowlatency
+1total 0
+drwxr-x--- 2 root root      0 2026-11-14 16:19 .
+drwxr-xr-x 8 root root      0 2026-11-14 16:19 ..
+-r--r--r-- 1 root root 919292 2026-11-14 16:19 console-ramoops-01
+-r--r--r-- 1 root root 537719 2026-11-14 13:35 dmesg-ramoops-0
+=====SHOW
+== settings (defaults < /data/adb/modules/firecube_lldv/lldv.conf < /data/adb/lldv.conf)
+base VSVDB : eb0146d0004903485798a953
+primaries  : DCI-P3
+maxlum     : 385 -> code 9 = 372 cd/m2
+effective  : eb0146d00049034889627697
+override   : /data/adb/lldv.conf: PRIMARIES=DCI-P3 
+
+== display
+hpd_state  : 1   sink_type: repeater
+status     : DolbyVision-Lowlatency
+dv_cap2    : DolbyVision RX support list:
+reported   : eb0146d00049034889627697
+
+== watcher

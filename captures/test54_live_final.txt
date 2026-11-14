@@ -1,0 +1,41 @@
+2839.40 20031.50
+--- 4 after: lldv set primaries DCI-P3
+reported : eb0146d00049038089627697   DolbyVision RX support list:
+status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+PASS live primaries DCI-P3 + maxlum 1037
+--- 5 after: lldv reset
+reported : eb0146d0004903485798a953   DolbyVision RX support list:
+status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+PASS reset back to the base block
+--- 6 bad override (PRIMARIES=rec2100) written by hand
+reported : eb0146d0004903485798a953   DolbyVision RX support list:
+status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+PASS bad override leaves the block alone
+=== lldv command output
+[set maxlum 1000]
+MAXLUM=1037 (asked for 1000, nearest selectable step, code 16)
+effective VSVDB now: eb0146d0004903805798a953
+the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)
+[set primaries DCI-P3]
+PRIMARIES=DCI-P3
+effective VSVDB now: eb0146d00049038089627697
+the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)
+[reset]
+removed /data/local/tmp/ut/live_ov.conf
+effective VSVDB now: eb0146d0004903485798a953
+the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)
+=== watcher log
+11-14 16:12:14 watcher started (pid 26606, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 16:12:17 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:12:23 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:12:38 boot guard: stable for 5 minutes, counter cleared
+11-14 16:12:50 settings changed: injected eb0146d0004903485798a953 -> wanted eb0146d0004903805798a953
+11-14 16:12:55 settings changed, re-injected Dolby VSVDB eb0146d0004903805798a953 (EDID now 384 bytes, kernel reports eb0146d0004903805798a953) and cycled fake_plug
+11-14 16:13:31 settings changed: injected eb0146d0004903805798a953 -> wanted eb0146d00049038089627697
+11-14 16:13:35 settings changed, re-injected Dolby VSVDB eb0146d00049038089627697 (EDID now 384 bytes, kernel reports eb0146d00049038089627697) and cycled fake_plug
+11-14 16:14:11 settings changed: injected eb0146d00049038089627697 -> wanted eb0146d0004903485798a953
+11-14 16:14:16 settings changed, re-injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:14:51 WARN settings: PRIMARIES=rec2100 ignored: unknown primaries preset 'rec2100' (use BT709, BT2020, DCI-P3 or LS12000);
+=== counts: injected=1 settings-changed=3 errors=0 warns=1
+cleanup: override removed: yes, real override untouched: ls: /data/adb/lldv.conf: No such file or directory, The Rx don't support DolbyVision
+DONE

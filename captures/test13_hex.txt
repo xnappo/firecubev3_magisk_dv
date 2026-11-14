@@ -1,0 +1,17 @@
+file size: 256 bytes -> expect 512 hex chars
+A xxd -p | tr -d '
+'         : 520
+B xxd -p | tr -d '
+'       : 520
+C xxd -p -c 256 (chars+nl)     : 529
+D od -An -v -tx1 | tr -d ' 
+': 512
+E xxd -p lines                 : 9
+F xxd -p -c 256 lines          : 9
+G var from -c 256 length       : 528
+H var substring far            : 000000000000
+I var from tr octal length     : 520
+J command-substitution only length (newlines inside?): 528
+K echo $Z unquoted (newlines->spaces) then strip spaces: 512
+L roundtrip xxd -r -p          : SAME
+DONE

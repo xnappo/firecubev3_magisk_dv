@@ -1,0 +1,196 @@
+#!/system/bin/sh
+# lldv - settings and status for the Fire TV Cube 3 Dolby Vision (LLDV) module. Run it as root:
+#
+#   su -c /data/adb/modules/firecube_lldv/lldv show
+#
+#   lldv show                      current settings, what the display reports, watcher state, recent log
+#   lldv list                      the selectable maxLum values and colour-primary presets
+#   lldv set maxlum <cd/m2>|0      peak luminance to advertise (nearest of 32 steps; 0 = base block's own value)
+#   lldv set primaries <preset>    BT709 | BT2020 | DCI-P3 | LS12000 | base (= the base block's own primaries)
+#   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base (the
+#                                  Magisk app's Action button runs this)
+#   lldv reset [maxlum|primaries]  remove the override(s); the module's lldv.conf defaults apply again
+#   lldv log [lines]               tail of /data/local/tmp/lldv.log
+#
+# Changes are written to /data/adb/lldv.conf (survives module updates); the running watcher picks them up within
+# a few seconds and re-injects (the screen blinks once). Nothing here touches the display directly.
+
+MODDIR=${LLDV_MODDIR:-${0%/*}}
+[ -f "$MODDIR/lldv_cfg.sh" ] || MODDIR=/data/adb/modules/firecube_lldv
+E=/sys/class/amhdmitx/amhdmitx0
+LOG=${LLDV_LOG:-/data/local/tmp/lldv.log}
+
+. "$MODDIR/lldv_lum.sh"
+. "$MODDIR/lldv_gamut.sh"
+. "$MODDIR/lldv_guard.sh"
+. "$MODDIR/lldv_cfg.sh"
+lldv_effective
+
+die() {
+    echo "lldv: $*" >&2
+    exit 1
+}
+
+need_root() {
+    [ "$(id -u)" = "0" ] || die "must run as root, e.g.  su -c '$0 <command>'"
+}
+
+reload() {
+    . "$MODDIR/lldv_cfg.sh"
+    lldv_effective
+}
+
+# set_key KEY VALUE: writes KEY=VALUE into the override file, replacing any earlier line for KEY.
+# Values are validated by the callers, so the file stays safe to source.
+set_key() {
+    _tmp="$OVERRIDE.tmp"
+    : > "$_tmp" || die "cannot write $_tmp"
+    [ -f "$OVERRIDE" ] && grep -v "^$1=" "$OVERRIDE" > "$_tmp"
+    echo "$1=$2" >> "$_tmp"
+    chmod 600 "$_tmp"
+    chown 0:0 "$_tmp" 2>/dev/null
+    mv "$_tmp" "$OVERRIDE" || die "cannot update $OVERRIDE"
+}
+
+# drop_key KEY: removes the line for KEY; the file goes away when nothing is left
+drop_key() {
+    [ -f "$OVERRIDE" ] || return 0
+    _tmp="$OVERRIDE.tmp"
+    grep -v "^$1=" "$OVERRIDE" > "$_tmp"
+    if [ -s "$_tmp" ]; then
+        chmod 600 "$_tmp"
+        chown 0:0 "$_tmp" 2>/dev/null
+        mv "$_tmp" "$OVERRIDE"
+    else
+        rm -f "$_tmp" "$OVERRIDE"
+    fi
+}
+
+watcher_running() {
+    [ -f /dev/lldv_watch.pid ] && kill -0 "$(cat /dev/lldv_watch.pid 2>/dev/null)" 2>/dev/null
+}
+
+after_change() {
+    reload
+    echo "effective VSVDB now: $VSVDB_EFF"
+    [ -n "$CFG_ERRORS" ] && echo "WARNING:$CFG_ERRORS"
+    if watcher_running; then
+        echo "the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)"
+    else
+        echo "note: the watcher is not running (module disabled or not yet booted); it applies this after the next start"
+    fi
+}
+
+cmd_show() {
+    echo "== settings (defaults < $MODDIR/lldv.conf < $OVERRIDE)"
+    echo "base VSVDB : $VSVDB"
+    echo "primaries  : ${PRIMARIES:-base block's own}"
+    if [ -n "$MAXLUM" ] && [ "$MAXLUM" != "0" ]; then
+        _r=$(lldv_lum_nearest "$MAXLUM")
+        case "$_r" in
+            ERR:*) echo "maxlum     : $MAXLUM  (${_r#ERR:})" ;;
+            *) echo "maxlum     : $MAXLUM -> code ${_r%% *} = ${_r#* } cd/m2" ;;
+        esac
+    else
+        echo "maxlum     : base block's own"
+    fi
+    echo "effective  : $VSVDB_EFF"
+    [ -n "$CFG_ERRORS" ] && echo "WARNING    :$CFG_ERRORS"
+    [ -n "$LLDV_CFG_WARN" ] && echo "WARNING    : $LLDV_CFG_WARN"
+    [ -f "$OVERRIDE" ] && echo "override   : $OVERRIDE: $(tr '\n' ' ' < "$OVERRIDE")" || echo "override   : none"
+    echo
+    echo "== display"
+    echo "hpd_state  : $(cat $E/hpd_state 2>/dev/null | tr -d '\r\n ')   sink_type: $(cat $E/sink_type 2>/dev/null | tr -d '\r\n ')"
+    echo "status     : $(cat $E/hdmi_hdr_status 2>/dev/null | tr -d '\r\n')"
+    echo "dv_cap2    : $(head -1 $E/dv_cap2 2>/dev/null)"
+    _v=$(grep -m1 'VSVDB:' $E/dv_cap2 2>/dev/null)
+    [ -n "$_v" ] && echo "reported   : ${_v#*VSVDB: }"
+    echo
+    echo "== watcher"
+    if watcher_running; then echo "running, pid $(cat /dev/lldv_watch.pid)"; else echo "NOT running"; fi
+    [ -f "$MODDIR/disable" ] && echo "module is DISABLED ($MODDIR/disable exists)"
+    echo
+    echo "== last log lines"
+    tail -n 6 "$LOG" 2>/dev/null
+}
+
+cmd_list() {
+    echo "maxlum: whole number of cd/m2; the nearest of these 32 steps is used (code = position - 1):"
+    echo "  $LLDV_LUM_NITS"
+    echo "  0 = keep the base block's own value"
+    echo
+    echo "primaries presets (stored in 1/256 steps):"
+    echo "  BT709           R 0.6400,0.3300  G 0.3000,0.6000  B 0.1500,0.0600"
+    echo "  BT2020          R 0.7080,0.2920  G 0.1700,0.7970  B 0.1310,0.0460"
+    echo "  DCI-P3          R 0.6800,0.3200  G 0.2650,0.6900  B 0.1500,0.0600"
+    echo "  LS12000         R 0.6670,0.3310  G 0.3140,0.6720  B 0.1480,0.0420   (LS12000 Native)"
+    echo "  base            keep the primaries of the base block"
+}
+
+cmd_set() {
+    need_root
+    case "$1" in
+        maxlum)
+            [ -n "$2" ] || die "usage: lldv set maxlum <cd/m2>|0"
+            if [ "$2" = "0" ]; then
+                set_key MAXLUM 0
+                echo "MAXLUM=0 (base block's own value)"
+            else
+                _r=$(lldv_lum_nearest "$2")
+                case "$_r" in ERR:*) die "${_r#ERR:}" ;; esac
+                set_key MAXLUM "${_r#* }"
+                echo "MAXLUM=${_r#* } (asked for $2, nearest selectable step, code ${_r%% *})"
+            fi
+            after_change
+            ;;
+        primaries)
+            [ -n "$2" ] || die "usage: lldv set primaries BT709|BT2020|DCI-P3|LS12000|base"
+            _base=$(echo "$2" | tr 'A-Z' 'a-z')
+            if [ "$_base" = "base" ]; then
+                set_key PRIMARIES ""
+                echo "PRIMARIES= (base block's own)"
+            else
+                _c=$(lldv_primaries_canon "$2")
+                case "$_c" in ERR:*) die "${_c#ERR:}" ;; esac
+                set_key PRIMARIES "$_c"
+                echo "PRIMARIES=$_c"
+            fi
+            after_change
+            ;;
+        *) die "usage: lldv set maxlum <cd/m2>|0   or   lldv set primaries <preset>" ;;
+    esac
+}
+
+cmd_cycle() {
+    need_root
+    case "$PRIMARIES" in
+        "") _next=BT709 ;;
+        BT709) _next=BT2020 ;;
+        BT2020) _next=DCI-P3 ;;
+        DCI-P3) _next=LS12000 ;;
+        *) _next=base ;;
+    esac
+    echo "primaries: ${PRIMARIES:-base} -> $_next"
+    cmd_set primaries "$_next"
+}
+
+cmd_reset() {
+    need_root
+    case "$1" in
+        "") rm -f "$OVERRIDE"; echo "removed $OVERRIDE" ;;
+        maxlum) drop_key MAXLUM; echo "MAXLUM override removed" ;;
+        primaries) drop_key PRIMARIES; echo "PRIMARIES override removed" ;;
+        *) die "usage: lldv reset [maxlum|primaries]" ;;
+    esac
+    after_change
+}
+
+case "$1" in
+    show | "") cmd_show ;;
+    list) cmd_list ;;
+    set) shift; cmd_set "$@" ;;
+    cycle) cmd_cycle ;;
+    reset) shift; cmd_reset "$@" ;;
+    log) tail -n "${2:-30}" "$LOG" ;;
+    *) die "unknown command '$1' (show, list, set, cycle, reset, log)" ;;
+esac

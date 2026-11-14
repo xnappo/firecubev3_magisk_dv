@@ -1,0 +1,56 @@
+uptime: 48.82 218.73  boot_completed: 1
+bootreason: reboot,
+== module dir
+total 68
+drwxr-xr-x 2 root root 4096 2026-11-14 16:16 .
+drwxr-xr-x 4 root root 4096 2026-11-14 16:19 ..
+-rwxr-xr-x 1 root root  378 2026-11-14 16:16 action.sh
+-rwxr-xr-x 1 root root 7285 2026-11-14 16:16 lldv
+-rw-r--r-- 1 root root 1796 2026-11-14 16:16 lldv.conf
+-rw-r--r-- 1 root root 2404 2026-11-14 16:16 lldv_cfg.sh
+-rw-r--r-- 1 root root 5242 2026-11-14 16:16 lldv_edid.sh
+-rw-r--r-- 1 root root 3323 2026-11-14 16:16 lldv_gamut.sh
+-rw-r--r-- 1 root root 1691 2026-11-14 16:16 lldv_guard.sh
+-rw-r--r-- 1 root root 2732 2026-11-14 16:16 lldv_lum.sh
+-rwxr-xr-x 1 root root 7946 2026-11-14 16:16 lldv_watch.sh
+-rw-r--r-- 1 root root  351 2026-11-14 16:16 module.prop
+-rwxr-xr-x 1 root root  906 2026-11-14 16:16 service.sh
+-rwxr-xr-x 1 root root  434 2026-11-14 16:16 uninstall.sh
+== boot-loop counter (exists only during the first 5 minutes): cat: /data/adb/lldv_boot_count: No such file or directory
+== watcher processes
+pid file: 639
+== display
+hpd_state: 1  sink_type: repeater  rawedid_chars: 769
+hdmi_hdr_status: DolbyVision-Lowlatency  dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+== dv_cap2
+DolbyVision RX support list:
+VSVDB Version: V2
+2160p60hz: 1
+Support mode:
+  LL_YCbCr_422_12BIT
+IEEEOUI: 0x00d046
+EMP: 0
+VSVDB: eb0146d0004903485798a953
+== /data/adb/lldv.conf
+cat: /data/adb/lldv.conf: No such file or directory
+== module log
+11-14 15:24:54 watcher started (pid 644, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 15:24:57 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 15:25:11 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes) and cycled fake_plug
+11-14 15:28:40 boot-loop guard: 3 boots within 5 minutes of each other, module disabled (remove /data/adb/modules/firecube_lldv/disable to re-enable)
+11-14 15:28:48 watcher started (pid 696, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 15:28:51 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 15:29:05 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes) and cycled fake_plug
+11-14 16:19:27 boot guard: counted:1 (limit 4 unstable boots in a row)
+11-14 16:19:27 boot guard: repeat:1 (limit 4 unstable boots in a row)
+11-14 16:19:35 watcher started (pid 639, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 16:19:38 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:19:52 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+== pstore (a panic would add a new dmesg-ramoops file/time)
+total 0
+drwxr-x--- 2 root root      0 2026-11-14 16:19 .
+drwxr-xr-x 8 root root      0 2026-11-14 16:19 ..
+-r--r--r-- 1 root root 919292 2026-11-14 16:19 console-ramoops-01
+-r--r--r-- 1 root root 537719 2026-11-14 13:35 dmesg-ramoops-0
+DONE

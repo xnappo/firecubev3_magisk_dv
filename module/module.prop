@@ -1,0 +1,6 @@
+id=firecube_lldv
+name=Fire TV Cube 3 - Dolby Vision (LLDV) on non-DV displays
+version=v0.2.0-dev
+versionCode=2
+author=firecubev3_magisk_dv
+description=Adds a Dolby Vision VSVDB (as an extra CTA EDID block) when the connected display reports no DV, and re-applies it after hotplug, standby wake and display power cycles. Gazelle (Fire TV Cube 3) only.

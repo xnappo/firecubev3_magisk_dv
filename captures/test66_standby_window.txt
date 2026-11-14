@@ -1,0 +1,20 @@
+uptime now: 1165.48 8128.33
+== plug / suspend / resume / EDID events with uptime 980..1050
+[  989.712136] HDMITX: Early Suspend
+[ 1044.269166] hdmitx hpd state: 1
+[ 1044.322814] hdmitx: edid: EDID Parser:
+[ 1044.347547] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=1
+[ 1044.349100] amhdmitx21: late resume module 590
+[ 1044.349553] HDMITX: Late Resume
+[ 1044.495834] [RX]-hpd & rxsense force val:1
+[ 1048.687871] [dump_edid_data] write 256 bytes to file /dev/ed
+[ 1049.729795] hdmitx: edid: EDID Parser:
+[ 1049.739404] [load_edid_data] new edid loaded!
+== watcher log tail
+11-14 16:30:57 settings changed: injected eb0146d0004903489b3426a7 -> wanted eb0146d0004903485998aa5c
+11-14 16:31:01 settings changed, re-injected Dolby VSVDB eb0146d0004903485998aa5c (EDID now 384 bytes, kernel reports eb0146d0004903485998aa5c) and cycled fake_plug
+11-14 16:31:20 settings changed: injected eb0146d0004903485998aa5c -> wanted eb0146d00049034889627697
+11-14 16:31:24 settings changed, re-injected Dolby VSVDB eb0146d00049034889627697 (EDID now 384 bytes, kernel reports eb0146d00049034889627697) and cycled fake_plug
+11-14 16:36:54 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:36:59 injected Dolby VSVDB eb0146d00049034889627697 (EDID now 384 bytes, kernel reports eb0146d00049034889627697) and cycled fake_plug
+DONE

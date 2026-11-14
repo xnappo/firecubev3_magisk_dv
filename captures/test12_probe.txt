@@ -1,0 +1,19 @@
+KSH_VERSION=@(#)MIRBSD KSH R56 2018/01/14 Android
+1 literal offset       : [ff]            expect ff
+2 var offset           : [ff]            expect ff
+3 nested arith offset  : [ff]            expect ff
+4 arith on substring   : [255]            expect 255
+5 arith via temp var   : [255]            expect 255
+6 arith on var offset  : [255]            expect 255
+7 length               : [8]            expect 8
+8 func positional copy : [ff]            expect [ff]
+9 func positional raw  : [ff]            expect [ff]
+10 loop sum            : [6]            expect 6
+11 printf %02x         : [ab]            expect ab
+12 printf %*s          : [    ]            expect 4 spaces
+13 case glob           : [good]            expect good
+14 od decimal          : [0 255 16]            expect 0 255 16
+15 big string length   : [520]            expect 512
+16 big substring       : [00ffffffffffff00]            expect 00ffffffffffff00
+17 big substring far   : [000000000000]            expect 12 chars
+DONE

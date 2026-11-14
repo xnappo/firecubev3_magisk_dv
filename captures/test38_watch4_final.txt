@@ -1,0 +1,34 @@
+6295.60 45365.77
+PASS BT709
+    conf     : PRIMARIES=BT709 
+    expected : eb0146d0004903489b3426a7
+    got      : eb0146d0004903489b3426a7
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-14 15:15:57 injected Dolby VSVDB eb0146d0004903489b3426a7 (EDID now 384 bytes) and cycled fake_plug|
+PASS BT2020
+    conf     : PRIMARIES=BT2020 
+    expected : eb0146d0004903485998aa5c
+    got      : eb0146d0004903485998aa5c
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-14 15:16:43 injected Dolby VSVDB eb0146d0004903485998aa5c (EDID now 384 bytes) and cycled fake_plug|
+PASS DCI-P3
+    conf     : PRIMARIES=DCI-P3 
+    expected : eb0146d00049034889627697
+    got      : eb0146d00049034889627697
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-14 15:17:29 injected Dolby VSVDB eb0146d00049034889627697 (EDID now 384 bytes) and cycled fake_plug|
+PASS LS12000 Native
+    conf     : PRIMARIES=LS12000 
+    expected : eb0146d000490348a1585eab
+    got      : eb0146d000490348a1585eab
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-14 15:18:15 injected Dolby VSVDB eb0146d000490348a1585eab (EDID now 384 bytes) and cycled fake_plug|
+PASS DCI-P3 + MAXLUM 1000
+    conf     : PRIMARIES=DCI-P3 MAXLUM=1000 
+    expected : eb0146d00049038089627697
+    got      : eb0146d00049038089627697
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-14 15:19:02 injected Dolby VSVDB eb0146d00049038089627697 (EDID now 384 bytes) and cycled fake_plug|
+===
+-rw-r--r-- 1 root root 18 2026-11-14 15:19 /data/adb/lldv.conf
+1

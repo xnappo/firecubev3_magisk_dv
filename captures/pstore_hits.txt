@@ -1,0 +1,11 @@
+1: Panic#2 Part1
+13444: <1>[11638.261380@3]  Unable to handle kernel paging request at virtual address 001a1252a8d7dbff
+13454: <0>[11638.266863@3]  Internal error: Oops: 96000004 [#1] PREEMPT SMP
+13456: <6>[11638.274121@3]  PC : ffffffc0102f1d0c, PFN:***** V
+13470: <4>[11638.282699@3]  Hardware name: Amlogic (DT)
+13472: <4>[11638.283843@3]  pc : __kmalloc_track_caller+0x130/0x39c
+13473: <4>[11638.284476@3]  lr : __kmalloc_track_caller+0x74/0x39c
+13612: <4>[11638.406372@3]  Call trace:
+13630: <4>[11638.458139@3]  Call trace:
+13634: <4>[11638.459927@3]   panic+0x68/0x38c
+13656: <0>[11638.470467@3]  Kernel panic - not syncing: Fatal exception

@@ -1,0 +1,72 @@
+##### ORIGINAL
+length=256 blocks=2
+ext count (0x7e)=1  blk0 checksum ok=True
+block 1: tag=02 rev=03 D=117 byte3=70 checksum ok=True free=10
+  @  4 len=24 Video                        5761665f645d6260655e631022201f210504130706030201
+  @ 28 len=22 Audio                        350907071507505704033d07c05f7e07677e035f7e01
+  @ 50 len= 4 Speaker                      83010000
+  @ 54 len=17 Vendor                       70030c0020003844a05b5b008001020304
+  @ 71 len=11 Vendor                       6ad85dc40178800b02303c
+  @ 82 len=12 Extended/Vendor Video        eb0146d0004d4f2a96381fbf  <== DOLBY VSVDB
+  @ 94 len= 6 Extended/Vendor Video        e5018b849001
+  @100 len= 3 Extended/Video Capability    e200ff
+  @103 len= 3 Extended/YCbCr420 CMDB       e20fc3
+  @106 len= 7 Extended/HDR Static Metadata e6060f0153530a
+  @113 len= 4 Extended/Colorimetry         e305e000
+  trailing bytes after data blocks: 10 (non-zero: 0)
+
+##### STRIP-DV  -> edid_nodv.bin (2 blocks, simulates non-DV sink)
+length=256 blocks=2
+ext count (0x7e)=1  blk0 checksum ok=True
+block 1: tag=02 rev=03 D=105 byte3=70 checksum ok=True free=22
+  @  4 len=24 Video                        5761665f645d6260655e631022201f210504130706030201
+  @ 28 len=22 Audio                        350907071507505704033d07c05f7e07677e035f7e01
+  @ 50 len= 4 Speaker                      83010000
+  @ 54 len=17 Vendor                       70030c0020003844a05b5b008001020304
+  @ 71 len=11 Vendor                       6ad85dc40178800b02303c
+  @ 82 len= 6 Extended/Vendor Video        e5018b849001
+  @ 88 len= 3 Extended/Video Capability    e200ff
+  @ 91 len= 3 Extended/YCbCr420 CMDB       e20fc3
+  @ 94 len= 7 Extended/HDR Static Metadata e6060f0153530a
+  @101 len= 4 Extended/Colorimetry         e305e000
+  trailing bytes after data blocks: 22 (non-zero: 0)
+
+##### ADD-DV on nodv -> edid_nodv_plus_dv3.bin (3 blocks)
+length=384 blocks=3
+ext count (0x7e)=2  blk0 checksum ok=True
+block 1: tag=02 rev=03 D=105 byte3=70 checksum ok=True free=22
+  @  4 len=24 Video                        5761665f645d6260655e631022201f210504130706030201
+  @ 28 len=22 Audio                        350907071507505704033d07c05f7e07677e035f7e01
+  @ 50 len= 4 Speaker                      83010000
+  @ 54 len=17 Vendor                       70030c0020003844a05b5b008001020304
+  @ 71 len=11 Vendor                       6ad85dc40178800b02303c
+  @ 82 len= 6 Extended/Vendor Video        e5018b849001
+  @ 88 len= 3 Extended/Video Capability    e200ff
+  @ 91 len= 3 Extended/YCbCr420 CMDB       e20fc3
+  @ 94 len= 7 Extended/HDR Static Metadata e6060f0153530a
+  @101 len= 4 Extended/Colorimetry         e305e000
+  trailing bytes after data blocks: 22 (non-zero: 0)
+block 2: tag=02 rev=03 D=16 byte3=70 checksum ok=True free=111
+  @  4 len=12 Extended/Vendor Video        eb0146d0004d4f2a96381fbf  <== DOLBY VSVDB
+  trailing bytes after data blocks: 111 (non-zero: 0)
+
+##### ADD-DV on original (already has DV) -> edid_orig_plus_dv3.bin (3 blocks)
+length=384 blocks=3
+ext count (0x7e)=2  blk0 checksum ok=True
+block 1: tag=02 rev=03 D=117 byte3=70 checksum ok=True free=10
+  @  4 len=24 Video                        5761665f645d6260655e631022201f210504130706030201
+  @ 28 len=22 Audio                        350907071507505704033d07c05f7e07677e035f7e01
+  @ 50 len= 4 Speaker                      83010000
+  @ 54 len=17 Vendor                       70030c0020003844a05b5b008001020304
+  @ 71 len=11 Vendor                       6ad85dc40178800b02303c
+  @ 82 len=12 Extended/Vendor Video        eb0146d0004d4f2a96381fbf  <== DOLBY VSVDB
+  @ 94 len= 6 Extended/Vendor Video        e5018b849001
+  @100 len= 3 Extended/Video Capability    e200ff
+  @103 len= 3 Extended/YCbCr420 CMDB       e20fc3
+  @106 len= 7 Extended/HDR Static Metadata e6060f0153530a
+  @113 len= 4 Extended/Colorimetry         e305e000
+  trailing bytes after data blocks: 10 (non-zero: 0)
+block 2: tag=02 rev=03 D=16 byte3=70 checksum ok=True free=111
+  @  4 len=12 Extended/Vendor Video        eb0146d0004d4f2a96381fbf  <== DOLBY VSVDB
+  trailing bytes after data blocks: 111 (non-zero: 0)
+total 12

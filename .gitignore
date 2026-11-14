@@ -1,0 +1,31 @@
+# Amazon's 2 GB kernel source tarball and what is extracted from it (see README: "Reference source")
+src/
+
+# Built module zips (build with tools/build_zip.py)
+dist/
+
+# Raw test output: only the curated evidence listed below is tracked
+captures/*
+!captures/edid_orig.bin
+!captures/edid_report.txt
+!captures/gamut_report.txt
+!captures/vsvdb_report.txt
+!captures/pstore_dmesg.txt
+!captures/pstore_hits.txt
+!captures/test10_bisect.txt
+!captures/test12_probe.txt
+!captures/test13_hex.txt
+!captures/test19_stageB.txt
+!captures/test21b_watch2_final.txt
+!captures/test38_watch4_final.txt
+!captures/test48_units.txt
+!captures/test54_live_final.txt
+!captures/test56_after_v2.txt
+!captures/test58_cable_pull.txt
+!captures/test61_box_flip.txt
+!captures/test62_action.txt
+!captures/test64_standby_after.txt
+!captures/test66_standby_window.txt
+
+*.tmp
+*.log

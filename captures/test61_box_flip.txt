@@ -1,0 +1,28 @@
+591.01 3978.49
+11-14 16:19:35 watcher started (pid 639, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries base, maxlum 385, effective vsvdb eb0146d0004903485798a953)
+11-14 16:19:38 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:19:52 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:21:49 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:21:54 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+11-14 16:24:26 boot guard: stable for 5 minutes, counter cleared
+11-14 16:28:41 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 16:28:46 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug
+=====STATE
+DolbyVision RX support list:
+VSVDB: eb0146d0004903485798a953
+DolbyVision-Lowlatency1=====KERNEL
+[  540.768686] plugin
+[  540.856523] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=1
+[  551.125146] EARC fe333800.earc: HDMITX cable is plugout
+[  551.125571] plugout
+[  551.152187] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=0
+[  552.135664] EARC fe333800.earc: HDMITX cable is plugin
+[  552.640695] plugin
+[  552.725112] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=1
+[  559.177664] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=0
+[  561.179202] notify_uevent_user[375]: sending uevent:SWITCH_NAME=hdmi,SWITCH_STATE=1
+total 0
+drwxr-x--- 2 root root      0 2026-11-14 16:19 .
+drwxr-xr-x 8 root root      0 2026-11-14 16:19 ..
+-r--r--r-- 1 root root 919292 2026-11-14 16:19 console-ramoops-01
+-r--r--r-- 1 root root 537719 2026-11-14 13:35 dmesg-ramoops-0

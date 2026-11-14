@@ -1,0 +1,41 @@
+1024.36 7282.55
+--- 0 before
+hpd: 1
+dv_cap2: The Rx don't support DolbyVision
+rawedid_chars: 513
+hdmi_hdr_status: HDR10-GAMMA_ST2084
+dv_mode: current dv_mode = HDR10
+android:     mHdrCapabilities=[  2  ]
+command length: 16 (must be 16)
+write rc=0
+--- 1 after 16-byte load (no plug event)
+hpd: 1
+dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769
+hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  2  ]
+-- kernel log (a 'cmd format' line would mean a fragment was re-parsed):
+[ 1002.961352] hdmitx: edid: get dtd1 vic: 18
+[ 1002.961912] hdmitx: edid: get dtd2 vic: 19
+[ 1002.962441] hdmitx: Edid_ParsingVendSpec:ieeeoui=0xd046,len=11
+[ 1002.963194] hdmitx: v2 VSVDB: len=11, sup_2160p60hz=1, Interface=2
+[ 1002.963995] hdmitx: Edid_ParsingVendSpec:ieeeoui=0xd046,len=11
+[ 1002.964753] hdmitx: v2 VSVDB: len=11, sup_2160p60hz=1, Interface=2
+[ 1002.965560] hdmitx: edid: get dtd3 vic: 97
+[ 1002.966109] hdmitx: edid: get dtd4 vic: 16
+[ 1002.966639] hdmitx: edid: find IEEEOUT
+[ 1002.967138] hdmitx: edid: check sum valid
+[ 1002.967667] hdmitx: edid: check sum valid
+[ 1002.968197] hdmitx: edid: check sum valid
+[ 1002.968731] [load_edid_data] new edid loaded!
+[ 1002.985393] hdmitx_set_vsif_pkt: type = 1
+--- fake_plug 0/1
+--- 2 after fake_plug cycle
+hpd: 1
+dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769
+hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+DONE

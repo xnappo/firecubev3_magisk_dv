@@ -1,0 +1,46 @@
+1348.67 9602.96
+--- 0 start
+hpd: 1  dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769  hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+--- 1 display's own EDID loaded, Android refreshed (box non-DV position: expect no DV, android [2])
+hpd: 1  dv_cap2: The Rx don't support DolbyVision
+rawedid_chars: 513  hdmi_hdr_status: HDR10-GAMMA_ST2084
+dv_mode: current dv_mode = HDR10
+android:     mHdrCapabilities=[  2  ]
+--- 2 35s after watcher start (expect DV, android [1 2])
+hpd: 1  dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769  hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+--- 3 25s later (expect unchanged)
+hpd: 1  dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769  hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+injections so far: 1  (expect 1)
+--- 4 right after re-reading the no-DV EDID (expect no DV)
+hpd: 1  dv_cap2: The Rx don't support DolbyVision
+rawedid_chars: 513  hdmi_hdr_status: HDR10-GAMMA_ST2084
+dv_mode: current dv_mode = HDR10
+android:     mHdrCapabilities=[  1  2  ]
+--- 5 35s later (expect DV again, android [1 2])
+hpd: 1  dv_cap2: DolbyVision RX support list:
+rawedid_chars: 769  hdmi_hdr_status: DolbyVision-Std
+dv_mode: current dv_mode = IPT_TUNNEL
+android:     mHdrCapabilities=[  1  2  ]
+injections so far: 2  (expect 2)
+=== watcher log
+11-14 13:55:29 watcher started (pid 10092, poll 2s, settle 3s, holdoff 15s, vsvdb eb0146d0004d4f2a96381fbf)
+11-14 13:55:33 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 13:55:38 injected Dolby VSVDB eb0146d0004d4f2a96381fbf (EDID now 384 bytes) and cycled fake_plug
+11-14 13:56:33 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 13:56:38 injected Dolby VSVDB eb0146d0004d4f2a96381fbf (EDID now 384 bytes) and cycled fake_plug
+DONE
+===LOG
+11-14 13:55:29 watcher started (pid 10092, poll 2s, settle 3s, holdoff 15s, vsvdb eb0146d0004d4f2a96381fbf)
+11-14 13:55:33 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 13:55:38 injected Dolby VSVDB eb0146d0004d4f2a96381fbf (EDID now 384 bytes) and cycled fake_plug
+11-14 13:56:33 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-14 13:56:38 injected Dolby VSVDB eb0146d0004d4f2a96381fbf (EDID now 384 bytes) and cycled fake_plug
