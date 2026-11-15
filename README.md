@@ -9,6 +9,10 @@ hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 > Magisk 30.7, with an HDMI box that switches between a DV and a non-DV EDID standing in for a non-DV display.
 > **Not yet tested:** a real projector, picture quality, and what `MAXLUM`/`PRIMARIES` do to the image (see
 > [What is and isn't verified](#what-is-and-isnt-verified)).
+>
+> **About v0.2.1 specifically:** the full set of device tests ran on v0.2.0 as installed. v0.2.1 only adds the
+> read-only `lldv edid` command; that code was tested from a copy on the Cube (72 unit checks, and a live comparison
+> against the EDID files the watcher loaded), but **the v0.2.1 zip itself has not been installed on a device yet**.
 
 > **Risk.** The module writes to a kernel sysfs node that panicked the Cube once during development
 > ([The panic](#the-panic)). The shipped code avoids the cause I found, but I could not prove that was the cause.
@@ -36,8 +40,12 @@ Details that were found the hard way are in [AGENT.md](AGENT.md).
 
 ## Install
 
-Build the zip (`python3 tools/build_zip.py module dist/firecube_lldv-v0.2.1.zip`), then either install it from the
-Magisk app (Modules, Install from storage) or, over adb:
+The ready-built module is [`dist/firecube_lldv-v0.2.1.zip`](dist/firecube_lldv-v0.2.1.zip) (about 18 KB), version
+v0.2.1. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.1.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.1.zip` regenerates the same bytes.
+
+Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
 adb push dist/firecube_lldv-v0.2.1.zip /data/local/tmp/
@@ -166,10 +174,12 @@ makes a handful of writes per injection. No panic has occurred since.
 | `tools/` | `build_zip.py`, `dv_vsvdb.py` (VSVDB decoder, maxLum table, gamut reference encoder), `edid_tool.py` |
 | `tools/dev/` | scripts pushed to `/data/local/tmp` and run as root on the Cube during development (tests, status, probes) |
 | `tools/wsl/` | scripts that run in WSL/Linux (extract Amazon's source, regenerate reports) |
+| `dist/` | the built module zip for the current version, plus `SHA256SUMS` |
 | `captures/` | curated evidence from the Cube (the original EDID, probe results, test results, the panic excerpt) |
 | `AGENT.md` | notes for AI coding agents and future maintainers |
 
-`src/` (Amazon's 2 GB kernel source tarball and the files read from it) and `dist/` (built zips) are not tracked.
+`dist/` holds the current release zip and its `SHA256SUMS`. `src/` (Amazon's 2 GB kernel source tarball and the files
+read from it) is not tracked, and neither are older dev builds of the zip.
 
 ## Reference source
 

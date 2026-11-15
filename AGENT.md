@@ -76,8 +76,12 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   `/data/local/tmp/lldv_mod/`, run a script from `tools/dev/` as root. **Do not** test by editing the installed copy.
   The `tools/dev/` scripts expect to be pushed to `/data/local/tmp/` and run from there, and several expect
   `/data/local/tmp/lldv_mod/` to hold the module and `/dev/ed` to hold the display's own 256-byte EDID.
-- Package: `python3 tools/build_zip.py module dist/<name>.zip` (LF endings, exec bits). Install with
-  `magisk --install-module`; Magisk applies it at the next reboot.
+- Package: `python3 tools/build_zip.py module dist/<name>.zip` (LF endings, exec bits, fixed timestamps: the output is
+  byte-for-byte reproducible). Install with `magisk --install-module`; Magisk applies it at the next reboot.
+- **Releasing:** bump `version`/`versionCode` in `module/module.prop`, build `dist/firecube_lldv-<version>.zip`,
+  write `dist/SHA256SUMS` (`<sha256>  <zipname>`, LF, no BOM), add the new zip to the `dist/` allow-list in
+  `.gitignore`, update the version in README's Install section, commit the zip with the code, then push. Only the
+  current release zip is tracked; do not commit older dev builds.
 - Unit tests: `tools/dev/dev_run_units.sh` (72 checks, both shells; push `captures/edid_orig.bin` and
   `edid_nodv_plus_dv3.bin` to `/data/local/tmp` first, the `lldv edid` tests read them). Live tests need the in-line
   DV/non-DV box. `tools/dev/dev_check_edid_cmd.sh` compares `lldv edid` with the EDID files the watcher loaded.
