@@ -7,7 +7,7 @@ already made. Everything here was observed on the real device unless marked *(in
 
 1. **Every write to `/sys/class/amhdmitx/amhdmitx0/edid` must be exactly 16 bytes, no trailing newline**
    (`printf '%s' 'load /dev/lldv_p' > edid`). `edid_store()` returns 16 whatever the length, so any other length makes
-   the shell resend the remainder as new commands. The Cube panicked once in this code path (README "The panic").
+   the shell resend the remainder as new commands. The Cube panicked once in this code path ("The panic" below).
    `lldv_watch.sh:edid_cmd()` enforces it; keep that guard. Do **not** use `echo "..." > edid` (adds a newline).
    Keep the paths short and on `/dev` (`/dev/ed`, `/dev/lldv_p`, `/dev/lldv_o`) so commands stay at 16 bytes.
 2. Keep injections rare: one attempt per EDID+settings combination, a hold-off after each attempt. Never loop on the
@@ -51,6 +51,10 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 - byte 7: **Target Max PQ code (7:3)**, Interface (1:0): 0 = low-latency only, 2 = standard + low-latency
 - bytes 8..11: primaries. `Gx = b8>>1`, `Gy = 0x80|b9>>1`, `Rx = 0xA0|b10>>3`, `Ry = 0x40|b11>>3`,
   `Bx = 0x20|b10&7`, `By = 0x08|b11&7` (all /256). Bit 0 of bytes 8 and 9 hold the 10/12-bit 4:4:4 flags: keep them.
+- Preset primaries are **rounded down** (floor) to the /256 code, not to the nearest: floor reproduces a known-good
+  LS12000 calibration EDID bit for bit (`captures/ls12000_known_good.txt`), and the default base block's primaries are
+  BT2020 floored. Do not switch back to nearest rounding. Python uses integer arithmetic so float error cannot cross
+  a step (e.g. 0.6720*256 = 172.032).
 - maxLum: PQ12 = 2055 + 65*code. The cd/m2 labels in `lldv_lum.sh` are a plain SMPTE ST 2084 calculation (code 9
   = 372); CoreELEC's decoder labels the same code "385". The code is unambiguous, the label is not.
 - Every extension block is parsed; the **last** Dolby VSVDB wins. The patcher appends a block (max 8 blocks total).
@@ -91,15 +95,28 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   commands: put non-trivial device commands in a script file and push it.
 - `captures/` holds the evidence behind claims in README. Keep claims and evidence in step; do not claim a test passed
   that no capture shows. Raw captures are git-ignored; add a file to the `!` list in `.gitignore` to keep it.
+- v0.2.2 device evidence: `captures/test80_units_v022.txt` (unit checks, both shells), `test81_gamut_v022.txt`
+  (primaries), `test82_watch4_v022.txt` (end-to-end: kernel-reported VSVDB per preset), `test83_live_restore_v022.txt`
+  (the test wrapper put the user's `/data/adb/lldv.conf` back and restarted the installed watcher).
+  `dev_test_watch4.sh` overwrites and then deletes `/data/adb/lldv.conf` and stops the watcher: on a box in real
+  use, back the file up first and restart the watcher afterwards.
 
 ## Things deliberately NOT done / open questions
 
-- **No picture-quality testing yet.** Whether `MAXLUM`/`PRIMARIES` change the image is unknown (`dovi.ko` is closed).
 - The guard's *trip* path (4 bad boots) was never exercised for real; only unit-tested.
 - A kernel-module approach (kretprobe on `hdmitx21_edid_parse`) was researched, not built. See README.
 - Cause of the double `service.sh` run, and of the ~11 s delay between watcher start and first action at boot, unknown.
-- The panic's root cause is unproven (README "The panic").
+- The panic's root cause is unproven ("The panic" below).
 - No license chosen. Do not add one on the owner's behalf.
+
+## The panic
+
+During development the Cube kernel-panicked once (`captures/pstore_dmesg.txt`): an Oops in `__kmalloc_track_caller`
+called from `edid_store` (the `edid` sysfs node), in the shell that was writing to it. `edid_store()` in Amazon's
+`hdmi_tx_main.c` always returns 16, whatever the write length, so a command that is not exactly 16 bytes makes the
+shell resend the remainder, which the kernel parses as more commands (`d`, `e`, `h`, ...). Many such writes had gone
+through the node before the crash. That is the best explanation, not a proven cause: the corrupted memory predates
+the crashing call. Hence hard rule 1. No panic has occurred since the 16-byte rule went in.
 
 ## Style
 

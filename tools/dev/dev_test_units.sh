@@ -89,7 +89,7 @@ check() {
   check "override mode"      "$(ls -l $LLDV_OVERRIDE | cut -c1-10)" "-rw-------"
   check "set primaries p3"   "$($L set primaries p3 | head -1)" "PRIMARIES=DCI-P3"
   check "override has both"  "$(sort $LLDV_OVERRIDE | tr '\n' ' ')" "MAXLUM=1037 PRIMARIES=DCI-P3 "
-  check "show effective 2"   "$($L show | grep 'effective  :' | tr -s ' ')" "effective : eb0146d00049038089627697"
+  check "show effective 2"   "$($L show | grep 'effective  :' | tr -s ' ')" "effective : eb0146d0004903808760768f"
   check "cycle -> LS12000"   "$($L cycle | head -1)" "primaries: DCI-P3 -> LS12000"
   check "cycle -> base"      "$($L cycle | head -1)" "primaries: LS12000 -> base"
   check "cycle -> BT709"     "$($L cycle | head -1)" "primaries: base -> BT709"

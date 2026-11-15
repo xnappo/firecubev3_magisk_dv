@@ -1,0 +1,12 @@
+backup: MAXLUM=372 PRIMARIES=LS12000 
+start: 10:11:37
+test done: 10:16:28
+restored conf: -rw------- MAXLUM=372 PRIMARIES=LS12000 
+watcher pid: 30751
+kernel VSVDB now: VSVDB: eb0146d000490348a15855a2
+log tail:
+11-15 10:16:29 watcher started (pid 30751, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372, effective vsvdb eb0146d000490348a15855a2)
+11-15 10:16:32 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-15 10:16:37 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+11-15 10:16:52 boot guard: stable for 5 minutes, counter cleared
+FINISHED

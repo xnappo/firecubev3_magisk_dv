@@ -1,0 +1,18 @@
+PASS BT709 eb0146d00049034899321ea7
+PASS BT2020 eb0146d0004903485798a953
+PASS DCI-P3 eb0146d0004903488760768f
+PASS LS12000 Native eb0146d000490348a15855a2
+PASS lowercase p3 eb0146d0004903488760768f
+PASS ls12000 eb0146d000490348a15855a2
+PASS bt.2020 spelling eb0146d0004903485798a953
+PASS unknown ERR:unknown primaries preset 'rec2100' (use BT709, BT2020, DCI-P3 or LS12000)
+PASS empty ERR:unknown primaries preset '' (use BT709, BT2020, DCI-P3 or LS12000)
+PASS non-dolby ERR:not a Dolby VSVDB
+PASS uppercase hex ERR:vsvdb is not lowercase hex
+PASS version 1 block ERR:primaries are only supported for VSVDB version 2
+PASS flag bit byte8 1
+PASS flag bit byte9 0
+PASS bytes 0-7 kept eb0146d000490348
+PASS BT709 + 1000 nits eb0146d00049038099321ea7
+PASS order independent eb0146d00049038099321ea7
+DONE

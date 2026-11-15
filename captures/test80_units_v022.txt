@@ -1,0 +1,13 @@
+##### shell: /system/bin/sh @(#)MIRBSD KSH R56 2018/01/14 Android 
+== guard
+== config layering
+== lldv command
+== lldv edid
+== summary: PASS=72 FAIL=0
+##### shell: /data/adb/magisk/busybox  
+== guard
+== config layering
+== lldv command
+== lldv edid
+== summary: PASS=72 FAIL=0
+FINISHED

@@ -95,8 +95,13 @@ RANGE = [(160, 191), (64, 95), (0, 127), (128, 255), (32, 39), (8, 15)]
 
 
 def preset_codes(name):
-    """Nearest /256 code for each coordinate (round half up)."""
-    return [int(v * 256 + 0.5) for v in PRESETS[name]]
+    """/256 code for each coordinate, rounded DOWN (floor).
+
+    Floor, not nearest: it reproduces a known-good LS12000 calibration EDID bit for bit
+    (captures/ls12000_known_good.txt), and the default base block's primaries are BT2020 floored.
+    Integer arithmetic on the 4-decimal values, so float error cannot push e.g. 0.6720*256 = 172.032 across a step.
+    """
+    return [int(round(v * 10000)) * 256 // 10000 for v in PRESETS[name]]
 
 
 def primary_codes(d):

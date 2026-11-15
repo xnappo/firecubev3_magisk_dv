@@ -62,12 +62,13 @@ rm -f /data/adb/lldv.conf
 if [ "$(wc -c < /dev/ed 2>/dev/null)" != "256" ]; then echo "/dev/ed missing or not 256 bytes, aborting" >> $O; exit 1; fi
 cp /dev/ed /dev/lldv_o
 
-phase "BT709"          "PRIMARIES=BT709"            eb0146d0004903489b3426a7
-phase "BT2020"         "PRIMARIES=BT2020"           eb0146d0004903485998aa5c
-phase "DCI-P3"         "PRIMARIES=DCI-P3"           eb0146d00049034889627697
-phase "LS12000 Native" "PRIMARIES=LS12000"          eb0146d000490348a1585eab
+phase "BT709"          "PRIMARIES=BT709"            eb0146d00049034899321ea7
+# BT2020 floored equals the default base block's own primaries, so this phase expects the base block unchanged
+phase "BT2020"         "PRIMARIES=BT2020"           eb0146d0004903485798a953
+phase "DCI-P3"         "PRIMARIES=DCI-P3"           eb0146d0004903488760768f
+phase "LS12000 Native" "PRIMARIES=LS12000"          eb0146d000490348a15855a2
 phase "DCI-P3 + MAXLUM 1000" "PRIMARIES=DCI-P3
-MAXLUM=1000"                                         eb0146d00049038089627697
+MAXLUM=1000"                                         eb0146d0004903808760768f
 phase "bad preset ignored (base block kept)" "PRIMARIES=rec2100" eb0146d0004903485798a953
 
 # leave the Cube on the display's own EDID, with no override file and no watcher

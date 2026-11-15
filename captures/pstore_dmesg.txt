@@ -1,6 +1,6 @@
 # Excerpt of /sys/fs/pstore/dmesg-ramoops-0 from the Fire TV Cube 3 panic of 2026-11-14 13:35 (kernel 5.4.125-ab25).
 # Full dump: 13,600+ lines, mostly hex of an EDID being dumped; only the oops and call trace are kept here.
-# Call trace: edid_store -> kstrdup -> __kmalloc_track_caller (slab corruption already present). See README "The panic".
+# Call trace: edid_store -> kstrdup -> __kmalloc_track_caller (slab corruption already present). See AGENT.md "The panic".
 
 <6>[11638.260849@3]  
 <1>[11638.261380@3]  Unable to handle kernel paging request at virtual address 001a1252a8d7dbff

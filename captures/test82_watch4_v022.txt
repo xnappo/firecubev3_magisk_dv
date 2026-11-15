@@ -1,0 +1,38 @@
+PASS BT709
+    conf     : PRIMARIES=BT709 
+    expected : eb0146d00049034899321ea7
+    got      : eb0146d00049034899321ea7
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:12:00 injected Dolby VSVDB eb0146d00049034899321ea7 (EDID now 384 bytes, kernel reports eb0146d00049034899321ea7) and cycled fake_plug|
+PASS BT2020
+    conf     : PRIMARIES=BT2020 
+    expected : eb0146d0004903485798a953
+    got      : eb0146d0004903485798a953
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:12:46 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug|
+PASS DCI-P3
+    conf     : PRIMARIES=DCI-P3 
+    expected : eb0146d0004903488760768f
+    got      : eb0146d0004903488760768f
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:13:32 injected Dolby VSVDB eb0146d0004903488760768f (EDID now 384 bytes, kernel reports eb0146d0004903488760768f) and cycled fake_plug|
+PASS LS12000 Native
+    conf     : PRIMARIES=LS12000 
+    expected : eb0146d000490348a15855a2
+    got      : eb0146d000490348a15855a2
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:14:18 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug|
+PASS DCI-P3 + MAXLUM 1000
+    conf     : PRIMARIES=DCI-P3 MAXLUM=1000 
+    expected : eb0146d0004903808760768f
+    got      : eb0146d0004903808760768f
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:15:05 injected Dolby VSVDB eb0146d0004903808760768f (EDID now 384 bytes, kernel reports eb0146d0004903808760768f) and cycled fake_plug|
+PASS bad preset ignored (base block kept)
+    conf     : PRIMARIES=rec2100 
+    expected : eb0146d0004903485798a953
+    got      : eb0146d0004903485798a953
+    status   : DolbyVision-Lowlatency  rawedid_chars: 769      mHdrCapabilities=[  1  2  ]
+    log      : 11-15 10:15:51 injected Dolby VSVDB eb0146d0004903485798a953 (EDID now 384 bytes, kernel reports eb0146d0004903485798a953) and cycled fake_plug|
+cleanup: override file removed: yes, display EDID restored: 513 chars, The Rx don't support DolbyVision
+DONE

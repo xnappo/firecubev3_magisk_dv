@@ -1,0 +1,33 @@
+Known-good LS12000 calibration EDID (Dolby VSVDB as shown by an EDID analyzer, supplied by the project owner):
+
+  Vendor-Specific Video Data Block (Dolby), OUI 00-D0-46:
+    Version: 2 (12 bytes)
+    Supports YUV422 12 bit
+    DM Version: 3.x
+    Backlt Min Luma: 100 cd/m^2
+    Interface: Low-Latency
+    Supports 10b 12b 444: 12 bit
+    Target Min PQ v2: 0 (0.00000000 cd/m^2)
+    Target Max PQ v2: 2640 (371 cd/m^2)
+    Unique Rx, Ry: 0.66406250, 0.32812500
+    Unique Gx, Gy: 0.31250000, 0.67187500
+    Unique Bx, By: 0.14453125, 0.03906250
+
+LS12000 Native preset requested: Rx 0.6670 Ry 0.3310 Gx 0.3140 Gy 0.6720 Bx 0.1480 By 0.0420
+Stored bits only (fixed high bits of _edid_parsingvendspec() removed):
+
+coord  x256     nearest        floor          reference
+Rx     170.752  01011 (171)    01010 (170)    01010 (170 = 0.66406250)
+Ry      84.736  10101 (85)     10100 (84)     10100 ( 84 = 0.32812500)
+Gx      80.384  1010000 (80)   1010000 (80)   1010000 ( 80 = 0.31250000)
+Gy     172.032  0101100 (172)  0101100 (172)  0101100 (172 = 0.67187500)
+Bx      37.888  110 (38)       101 (37)       101 ( 37 = 0.14453125)
+By      10.752  011 (11)       010 (10)       010 ( 10 = 0.03906250)
+
+Floor matches all six coordinates; nearest rounding misses four. Primary bytes 8..11 with floor: a1 58 55 a2
+(module result on the default base: eb0146d000490348a15855a2).
+
+Supporting: the default base block eb0146d0004903485798a953 decodes to codes 181 74 43 204 33 11, which is the
+BT2020 preset floored (nearest would be 181 75 44 204 34 12).
+
+Not matched on purpose: the reference has DM version 3.x, the module's base block has 4.x (byte 5 = 0x49). Left as is.

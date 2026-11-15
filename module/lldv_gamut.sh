@@ -17,7 +17,9 @@
 #   byte 9  = Gy[6:0]<<1                 | (kept: bit 0 = 10/12-bit 4:4:4 flag)         Gy 0.500..0.996
 #   byte 10 = Rx[4:0]<<3 | Bx[2:0]                                                      Rx 0.625..0.746  Bx 0.125..0.152
 #   byte 11 = Ry[4:0]<<3 | By[2:0]                                                      Ry 0.250..0.371  By 0.031..0.058
-# The /256 codes below are nearest-rounded and are generated and cross-checked by tools/dv_vsvdb.py (`gamut`).
+# The /256 codes below are rounded DOWN (floor), not to the nearest step: that reproduces a known-good LS12000
+# calibration EDID bit for bit (captures/ls12000_known_good.txt), and the default base block's primaries are BT2020
+# floored too. They are generated and cross-checked by tools/dv_vsvdb.py (`gamut`).
 # The v2 block has no white point field.
 #
 # Whether the Dolby Vision engine (dovi.ko, closed source) uses these primaries is NOT verified.
@@ -40,10 +42,10 @@ lldv_apply_primaries() {
 
     # Rx Ry Gx Gy Bx By as /256 codes
     case "$_pn" in
-        bt709) set -- 164 84 77 154 38 15 ;;
-        bt2020) set -- 181 75 44 204 34 12 ;;
-        dcip3 | p3) set -- 174 82 68 177 38 15 ;;
-        ls12000 | ls12000native) set -- 171 85 80 172 38 11 ;;
+        bt709) set -- 163 84 76 153 38 15 ;;
+        bt2020) set -- 181 74 43 204 33 11 ;;
+        dcip3 | p3) set -- 174 81 67 176 38 15 ;;
+        ls12000 | ls12000native) set -- 170 84 80 172 37 10 ;;
         *)
             echo "ERR:unknown primaries preset '$2' (use BT709, BT2020, DCI-P3 or LS12000)"
             return 1

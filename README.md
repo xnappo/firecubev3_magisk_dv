@@ -5,18 +5,11 @@ Vision, the module adds a Dolby Vision VSVDB to the EDID the Cube works from, so
 Vision (LLDV)** to a display that cannot do DV itself (a projector, for example). It re-applies the change after
 hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 
-> **Status: working prototype, tested on one device.** Fire OS 7.7.1.7 (PS7717/5741), kernel 5.4.125-ab25,
-> Magisk 30.7, with an HDMI box that switches between a DV and a non-DV EDID standing in for a non-DV display.
-> **Not yet tested:** a real projector, picture quality, and what `MAXLUM`/`PRIMARIES` do to the image (see
-> [What is and isn't verified](#what-is-and-isnt-verified)).
->
-> **About v0.2.1 specifically:** the full set of device tests ran on v0.2.0 as installed. v0.2.1 only adds the
-> read-only `lldv edid` command; that code was tested from a copy on the Cube (72 unit checks, and a live comparison
-> against the EDID files the watcher loaded), but **the v0.2.1 zip itself has not been installed on a device yet**.
+Current version: **v0.2.2** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
+kernel 5.4.125-ab25, Magisk 30.7.
 
-> **Risk.** The module writes to a kernel sysfs node that panicked the Cube once during development
-> ([The panic](#the-panic)). The shipped code avoids the cause I found, but I could not prove that was the cause.
-> A boot-loop guard disables the module after 4 unstable boots in a row. Unofficial, no warranty, you need root.
+> Unofficial, no warranty, you need root. The module changes the EDID the Cube's kernel works from; a boot-loop guard
+> disables it after 4 unstable boots in a row.
 
 ## How it works
 
@@ -31,7 +24,8 @@ hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 4. A loaded EDID is thrown away whenever the kernel re-reads the display (hotplug, and also a standby wake **with no
    plug event at all**). So the watcher polls the *state* every 2 s instead of waiting for events, and re-injects.
 
-Details that were found the hard way are in [AGENT.md](AGENT.md).
+All writes to the kernel's `edid` node are exactly 16 bytes with no newline, at fixed paths on `/dev`, and only a
+handful are made per injection. Implementation details and device quirks are in [AGENT.md](AGENT.md).
 
 ## Requirements
 
@@ -40,16 +34,16 @@ Details that were found the hard way are in [AGENT.md](AGENT.md).
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.2.1.zip`](dist/firecube_lldv-v0.2.1.zip) (about 18 KB), version
-v0.2.1. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
-`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.1.zip` (PowerShell). The
-build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.1.zip` regenerates the same bytes.
+The ready-built module is [`dist/firecube_lldv-v0.2.2.zip`](dist/firecube_lldv-v0.2.2.zip) (about 18 KB), version
+v0.2.2. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.2.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.2.zip` regenerates the same bytes.
 
 Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
-adb push dist/firecube_lldv-v0.2.1.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.1.zip"
+adb push dist/firecube_lldv-v0.2.2.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.2.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -78,6 +72,10 @@ The `lldv` command (run as root) changes them. The running watcher picks the cha
 | `lldv edid [orig]` | the EDID as hex, 16 bytes per line, to paste into an EDID analyzer (see below) |
 | `lldv log [n]` | tail of `/data/local/tmp/lldv.log` |
 
+Example: `su -c /data/adb/modules/firecube_lldv/lldv set primaries DCI-P3`
+
+### EDID dump
+
 **`lldv edid`** prints the live EDID the kernel holds now, which includes the injected block (3 blocks, 384 bytes,
 when the module has injected). `lldv edid orig` prints the display's own EDID as the module saved it just before
 injecting; it only exists after an injection since boot. Only hex goes to stdout, so `lldv edid > edid.txt` captures
@@ -90,23 +88,31 @@ flagged) goes to stderr. It only reads; it never writes to the kernel's `edid` n
 ...
 ```
 
-The output is uppercase, space-separated hex. Analyzers that take a hex dump accept this directly. To turn it back
-into a binary file on the Cube, lowercase it first: this toybox's `xxd -r -p` silently drops uppercase hex.
+The output is uppercase, space-separated hex, which analyzers that take a hex dump accept directly. For example,
+paste it into the online [edid-decode](https://hverkuil.home.xs4all.nl/edid-decode/edid-decode.html) and process it:
+the injected block shows up as `Vendor-Specific Video Data Block (Dolby), OUI 00-D0-46`, with the version, interface,
+Target Max PQ and the `Unique Rx, Ry` / `Gx, Gy` / `Bx, By` primaries the Cube advertises.
 
-Example: `su -c /data/adb/modules/firecube_lldv/lldv set primaries DCI-P3`
+To turn the dump back into a binary file on the Cube, lowercase it first (`tr 'A-F' 'a-f'`): the Cube's `xxd -r -p`
+skips uppercase hex.
+
+### maxLum and primaries
 
 **maxLum** is a 5-bit field, so only these 32 values exist (cd/m2): 94 110 129 150 175 204 237 276 320 372 431 499
 578 670 775 897 1037 1200 1387 1605 1856 2147 2485 2876 3330 3857 4470 5183 6014 6982 8113 9434. `385` becomes `372`
 (code 9, the value in the base block). Other tools label code 9 as "385"; the code in the EDID is what counts.
 
-**Primaries** are stored in 1/256 steps, so the Cube advertises the nearest representable number:
+**Primaries** are stored in 1/256 steps, rounded down. This matches a known-good LS12000 calibration EDID bit for
+bit (`captures/ls12000_known_good.txt`); the default base block's primaries are BT2020 rounded down too:
 
 | Preset | Requested (Rx Ry / Gx Gy / Bx By) | Stored |
 |---|---|---|
-| BT709 | .6400 .3300 / .3000 .6000 / .1500 .0600 | .6406 .3281 / .3008 .6016 / .1484 .0586 |
-| BT2020 | .7080 .2920 / .1700 .7970 / .1310 .0460 | .7070 .2930 / .1719 .7969 / .1328 .0469 |
-| DCI-P3 | .6800 .3200 / .2650 .6900 / .1500 .0600 | .6797 .3203 / .2656 .6914 / .1484 .0586 |
-| LS12000 Native | .6670 .3310 / .3140 .6720 / .1480 .0420 | .6680 .3320 / .3125 .6719 / .1484 .0430 |
+| BT709 | .6400 .3300 / .3000 .6000 / .1500 .0600 | .6367 .3281 / .2969 .5977 / .1484 .0586 |
+| BT2020 | .7080 .2920 / .1700 .7970 / .1310 .0460 | .7070 .2891 / .1680 .7969 / .1289 .0430 |
+| DCI-P3 | .6800 .3200 / .2650 .6900 / .1500 .0600 | .6797 .3164 / .2617 .6875 / .1484 .0586 |
+| LS12000 Native | .6670 .3310 / .3140 .6720 / .1480 .0420 | .6641 .3281 / .3125 .6719 / .1445 .0391 |
+
+With the default base block, `BT2020` therefore gives the same VSVDB as `base` (nothing is re-injected).
 
 Each coordinate has a limited reachable range in a v2 block (blue only 8 steps per axis); see
 `module/lldv_gamut.sh`. The v2 block has no white-point field.
@@ -114,46 +120,21 @@ Each coordinate has a limited reachable range in a v2 block (blue only 8 steps p
 You can also edit `/data/adb/lldv.conf` by hand (`VSVDB=`, `MAXLUM=`, `PRIMARIES=`, `POLL=`, `SETTLE=`,
 `HOLDOFF=`). It is sourced as shell, so it is ignored unless owned by root and not group/world-writable.
 
-## What is and isn't verified
+## Testing
 
-Tested on the Cube with an HDMI box in line that presents either a DV or a non-DV EDID (it reports as `repeater`):
+Tested on the Cube:
 
-| Verified | How |
+| Tested | How |
 |---|---|
 | Injection at boot | module installed, rebooted, watcher injected on its own |
 | Injection after a cable pull and replug | log and kernel events |
-| Box switched DV position, then non-DV | no injection while the box supplied DV; one injection after the flip back |
-| **Real standby wake** | kernel re-read the EDID at late resume with no plug event; watcher re-injected about 5 s later |
+| Display switched from DV to non-DV | no injection while the display reported DV; one injection after the switch |
+| Standby wake | kernel re-read the EDID at late resume with no plug event; watcher re-injected about 5 s later |
 | Live settings change (`lldv set`, Action button) | each change re-injected the new block, no reboot |
-| All four primaries presets and maxLum | the VSVDB the kernel reports matches the expected bytes |
-| Boot-loop guard counting and its 5-minute clear | real boots; the guard *tripping* was not exercised |
-| Shell code on the device | 72 unit checks pass under both the adb shell and Magisk's busybox ash |
-| `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded (live) and to the saved original |
-
-| NOT verified | Notes |
-|---|---|
-| **Any picture or real Dolby Vision playback** | nobody has looked at LLDV through this yet; a projector test is planned |
-| Whether `MAXLUM`/`PRIMARIES` change the image | the EDID carries them and the Cube advertises them; whether the closed-source `dovi.ko` uses them is unknown |
-| A real non-DV display connected directly | only an in-line box that spoofs the EDID was used |
-| TV power-off and input switch with the box in line | the box hid them from the Cube; with the TV direct, both appear as a plug-out/plug-in, which is the same event as the cable pull |
-| Other firmware versions | tested on 7.7.1.7 only; the source read was 7.7.1.4 |
-| An AVR or other device in the HDMI chain | untested |
-| The EDID `HF-EEODB` branch of the patcher | no sample EDID uses it |
-| Why Magisk runs `service.sh` twice per boot | seen in the log; the guard copes with it, the cause is unknown |
-
-## The panic
-
-During development the Cube kernel-panicked once (`captures/pstore_dmesg.txt`): an Oops in
-`__kmalloc_track_caller` called from `edid_store` (the `edid` sysfs node), in the shell that was writing to it.
-
-`edid_store()` in Amazon's `hdmi_tx_main.c` **always returns 16**, whatever the write length. A command that is not
-exactly 16 bytes therefore makes the shell resend the remainder as new commands, which the kernel parses as more
-commands (`d`, `e`, `h`, ...). Many such writes had gone through the node before the crash. That is my best
-explanation; **I could not prove it was the cause**, and the corrupted memory predates the crashing call.
-
-The module therefore writes to the `edid` node only with commands of **exactly 16 bytes and no newline**
-(`save bin /dev/ed`, `load /dev/lldv_p`, `load /dev/lldv_o`) at fixed paths on `/dev`, refuses any other length, and
-makes a handful of writes per injection. No panic has occurred since.
+| All four primaries presets and maxLum (v0.2.2) | the VSVDB the kernel reports matches the expected bytes for every preset, DCI-P3 + maxLum 1000 and a bad preset name (`captures/test82_watch4_v022.txt`) |
+| Boot-loop guard counting and its 5-minute clear | real boots |
+| Shell code on the device (v0.2.2) | 72 unit checks pass under both the adb shell and Magisk's busybox ash, and 17 primaries checks pass (`captures/test80_units_v022.txt`, `test81_gamut_v022.txt`) |
+| `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
 ## Troubleshooting and removal
 
@@ -175,7 +156,7 @@ makes a handful of writes per injection. No panic has occurred since.
 | `tools/dev/` | scripts pushed to `/data/local/tmp` and run as root on the Cube during development (tests, status, probes) |
 | `tools/wsl/` | scripts that run in WSL/Linux (extract Amazon's source, regenerate reports) |
 | `dist/` | the built module zip for the current version, plus `SHA256SUMS` |
-| `captures/` | curated evidence from the Cube (the original EDID, probe results, test results, the panic excerpt) |
+| `captures/` | curated evidence from the Cube (the original EDID, probe results, test results) |
 | `AGENT.md` | notes for AI coding agents and future maintainers |
 
 `dist/` holds the current release zip and its `SHA256SUMS`. `src/` (Amazon's 2 GB kernel source tarball and the files
@@ -195,6 +176,14 @@ A kernel-module approach (hooking `hdmitx21_edid_parse` with a kretprobe to patc
 investigated and not built. The kernel config has KPROBES and no `CONFIG_MODULE_SIG`, but it is built with CFI,
 ShadowCallStack, MODVERSIONS and ThinLTO, so a module would need the exact toolchain and carries a real risk of a
 crash. The EDID route needs none of that.
+
+## Revision history
+
+| Version | Changes |
+|---|---|
+| v0.2.2 | `PRIMARIES` presets round down to the 1/256 step instead of to the nearest one, matching a known-good LS12000 calibration EDID bit for bit. New preset blocks: BT709 `…99321ea7`, BT2020 `…5798a953` (same as the default base block), DCI-P3 `…8760768f`, LS12000 `…a15855a2`. |
+| v0.2.1 | New read-only `lldv edid [orig]` command: prints the live (or the display's original) EDID as hex for an EDID analyzer. |
+| v0.2.0 | First release: state-polling watcher, extra CTA block with the Dolby VSVDB, re-injection after boot, hotplug and standby wake, maxLum and primaries settings, `lldv` command and Magisk Action button, boot-loop guard. |
 
 ## License
 
