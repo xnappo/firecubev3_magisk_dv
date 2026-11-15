@@ -14,13 +14,13 @@ check() {
 }
 
 {
-  check "BT709"            "$(lldv_apply_primaries $BASE BT709)"            eb0146d0004903489b3426a7
-  check "BT2020"           "$(lldv_apply_primaries $BASE BT2020)"           eb0146d0004903485998aa5c
-  check "DCI-P3"           "$(lldv_apply_primaries $BASE DCI-P3)"           eb0146d00049034889627697
-  check "LS12000 Native"   "$(lldv_apply_primaries $BASE 'LS12000 Native')" eb0146d000490348a1585eab
-  check "lowercase p3"     "$(lldv_apply_primaries $BASE p3)"               eb0146d00049034889627697
-  check "ls12000"          "$(lldv_apply_primaries $BASE ls12000)"          eb0146d000490348a1585eab
-  check "bt.2020 spelling" "$(lldv_apply_primaries $BASE bt.2020)"          eb0146d0004903485998aa5c
+  check "BT709"            "$(lldv_apply_primaries $BASE BT709)"            eb0146d00049034899321ea7
+  check "BT2020"           "$(lldv_apply_primaries $BASE BT2020)"           eb0146d0004903485798a953
+  check "DCI-P3"           "$(lldv_apply_primaries $BASE DCI-P3)"           eb0146d0004903488760768f
+  check "LS12000 Native"   "$(lldv_apply_primaries $BASE 'LS12000 Native')" eb0146d000490348a15855a2
+  check "lowercase p3"     "$(lldv_apply_primaries $BASE p3)"               eb0146d0004903488760768f
+  check "ls12000"          "$(lldv_apply_primaries $BASE ls12000)"          eb0146d000490348a15855a2
+  check "bt.2020 spelling" "$(lldv_apply_primaries $BASE bt.2020)"          eb0146d0004903485798a953
   check "unknown"          "$(lldv_apply_primaries $BASE rec2100)"          "ERR:unknown primaries preset 'rec2100' (use BT709, BT2020, DCI-P3 or LS12000)"
   check "empty"            "$(lldv_apply_primaries $BASE '')"               "ERR:unknown primaries preset '' (use BT709, BT2020, DCI-P3 or LS12000)"
   check "non-dolby"        "$(lldv_apply_primaries eb0145d0004903485798a953 BT709)" "ERR:not a Dolby VSVDB"
@@ -35,7 +35,7 @@ check() {
   # composition: primaries then maxlum, both orders must give the same block
   a=$(lldv_apply_maxlum "$(lldv_apply_primaries $BASE BT709)" 1000)
   b=$(lldv_apply_primaries "$(lldv_apply_maxlum $BASE 1000)" BT709)
-  check "BT709 + 1000 nits" "$a" eb0146d0004903809b3426a7
+  check "BT709 + 1000 nits" "$a" eb0146d00049038099321ea7
   check "order independent" "$b" "$a"
   echo DONE
 } >> $O 2>&1

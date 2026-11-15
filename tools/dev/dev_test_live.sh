@@ -69,7 +69,7 @@ expect "live maxlum 1000 -> 1037" eb0146d0004903805798a953
 sh $MOD/lldv set primaries DCI-P3 > $T/ut/cmd2.txt 2>&1
 sleep 40
 snap "4 after: lldv set primaries DCI-P3"
-expect "live primaries DCI-P3 + maxlum 1037" eb0146d00049038089627697
+expect "live primaries DCI-P3 + maxlum 1037" eb0146d0004903808760768f
 
 sh $MOD/lldv reset > $T/ut/cmd3.txt 2>&1
 sleep 40

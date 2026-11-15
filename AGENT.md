@@ -51,6 +51,10 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 - byte 7: **Target Max PQ code (7:3)**, Interface (1:0): 0 = low-latency only, 2 = standard + low-latency
 - bytes 8..11: primaries. `Gx = b8>>1`, `Gy = 0x80|b9>>1`, `Rx = 0xA0|b10>>3`, `Ry = 0x40|b11>>3`,
   `Bx = 0x20|b10&7`, `By = 0x08|b11&7` (all /256). Bit 0 of bytes 8 and 9 hold the 10/12-bit 4:4:4 flags: keep them.
+- Preset primaries are **rounded down** (floor) to the /256 code, not to the nearest: floor reproduces a known-good
+  LS12000 calibration EDID bit for bit (`captures/ls12000_known_good.txt`), and the default base block's primaries are
+  BT2020 floored. Do not switch back to nearest rounding. Python uses integer arithmetic so float error cannot cross
+  a step (e.g. 0.6720*256 = 172.032).
 - maxLum: PQ12 = 2055 + 65*code. The cd/m2 labels in `lldv_lum.sh` are a plain SMPTE ST 2084 calculation (code 9
   = 372); CoreELEC's decoder labels the same code "385". The code is unambiguous, the label is not.
 - Every extension block is parsed; the **last** Dolby VSVDB wins. The patcher appends a block (max 8 blocks total).

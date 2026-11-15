@@ -10,9 +10,11 @@ hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 > **Not yet tested:** a real projector, picture quality, and what `MAXLUM`/`PRIMARIES` do to the image (see
 > [What is and isn't verified](#what-is-and-isnt-verified)).
 >
-> **About v0.2.1 specifically:** the full set of device tests ran on v0.2.0 as installed. v0.2.1 only adds the
-> read-only `lldv edid` command; that code was tested from a copy on the Cube (72 unit checks, and a live comparison
-> against the EDID files the watcher loaded), but **the v0.2.1 zip itself has not been installed on a device yet**.
+> **About v0.2.2 specifically:** the full set of device tests ran on v0.2.0 as installed. v0.2.1 added the read-only
+> `lldv edid` command (tested from a copy on the Cube: 72 unit checks, and a live comparison against the EDID files
+> the watcher loaded). v0.2.2 changes the `PRIMARIES` presets to round down to the 1/256 step instead of to the
+> nearest one, which matches a known-good LS12000 calibration EDID bit for bit; that was checked on a PC (shell code
+> under bash and busybox ash, against the Python reference), but **the v0.2.2 zip has not been tested on a device yet**.
 
 > **Risk.** The module writes to a kernel sysfs node that panicked the Cube once during development
 > ([The panic](#the-panic)). The shipped code avoids the cause I found, but I could not prove that was the cause.
@@ -40,16 +42,16 @@ Details that were found the hard way are in [AGENT.md](AGENT.md).
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.2.1.zip`](dist/firecube_lldv-v0.2.1.zip) (about 18 KB), version
-v0.2.1. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
-`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.1.zip` (PowerShell). The
-build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.1.zip` regenerates the same bytes.
+The ready-built module is [`dist/firecube_lldv-v0.2.2.zip`](dist/firecube_lldv-v0.2.2.zip) (about 18 KB), version
+v0.2.2. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.2.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.2.zip` regenerates the same bytes.
 
 Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
-adb push dist/firecube_lldv-v0.2.1.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.1.zip"
+adb push dist/firecube_lldv-v0.2.2.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.2.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -99,14 +101,17 @@ Example: `su -c /data/adb/modules/firecube_lldv/lldv set primaries DCI-P3`
 578 670 775 897 1037 1200 1387 1605 1856 2147 2485 2876 3330 3857 4470 5183 6014 6982 8113 9434. `385` becomes `372`
 (code 9, the value in the base block). Other tools label code 9 as "385"; the code in the EDID is what counts.
 
-**Primaries** are stored in 1/256 steps, so the Cube advertises the nearest representable number:
+**Primaries** are stored in 1/256 steps, rounded down (this matches a known-good LS12000 calibration EDID bit for
+bit, `captures/ls12000_known_good.txt`; the default base block's primaries are BT2020 rounded down too):
 
 | Preset | Requested (Rx Ry / Gx Gy / Bx By) | Stored |
 |---|---|---|
-| BT709 | .6400 .3300 / .3000 .6000 / .1500 .0600 | .6406 .3281 / .3008 .6016 / .1484 .0586 |
-| BT2020 | .7080 .2920 / .1700 .7970 / .1310 .0460 | .7070 .2930 / .1719 .7969 / .1328 .0469 |
-| DCI-P3 | .6800 .3200 / .2650 .6900 / .1500 .0600 | .6797 .3203 / .2656 .6914 / .1484 .0586 |
-| LS12000 Native | .6670 .3310 / .3140 .6720 / .1480 .0420 | .6680 .3320 / .3125 .6719 / .1484 .0430 |
+| BT709 | .6400 .3300 / .3000 .6000 / .1500 .0600 | .6367 .3281 / .2969 .5977 / .1484 .0586 |
+| BT2020 | .7080 .2920 / .1700 .7970 / .1310 .0460 | .7070 .2891 / .1680 .7969 / .1289 .0430 |
+| DCI-P3 | .6800 .3200 / .2650 .6900 / .1500 .0600 | .6797 .3164 / .2617 .6875 / .1484 .0586 |
+| LS12000 Native | .6670 .3310 / .3140 .6720 / .1480 .0420 | .6641 .3281 / .3125 .6719 / .1445 .0391 |
+
+With the default base block, `BT2020` therefore gives the same VSVDB as `base` (nothing is re-injected).
 
 Each coordinate has a limited reachable range in a v2 block (blue only 8 steps per axis); see
 `module/lldv_gamut.sh`. The v2 block has no white-point field.

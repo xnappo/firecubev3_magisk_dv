@@ -4,7 +4,7 @@ src/
 # Built module zips (build with tools/build_zip.py). Only the current release and its checksum are tracked;
 # older dev builds stay local. When you cut a new version, add its zip to the allow-list below.
 dist/*
-!dist/firecube_lldv-v0.2.1.zip
+!dist/firecube_lldv-v0.2.2.zip
 !dist/SHA256SUMS
 
 # Raw test output: only the curated evidence listed below is tracked
@@ -12,6 +12,7 @@ captures/*
 !captures/edid_orig.bin
 !captures/edid_report.txt
 !captures/gamut_report.txt
+!captures/ls12000_known_good.txt
 !captures/vsvdb_report.txt
 !captures/pstore_dmesg.txt
 !captures/pstore_hits.txt
