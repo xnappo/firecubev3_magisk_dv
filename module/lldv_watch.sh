@@ -153,8 +153,7 @@ do_inject() {
         _tries=$((_tries + 1))
         [ "$_tries" -lt 2 ] && sleep 2
     done
-    log "ERROR loaded EDID but the kernel still reports no DV; restoring the original EDID"
-    edid_cmd "$CMD_LOAD_ORIG"
+    log "WARN loaded EDID but the kernel still reports no DV; keeping patched EDID loaded"
     return 1
 
     plug_cycle
