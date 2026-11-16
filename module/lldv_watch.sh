@@ -41,9 +41,16 @@ log() {
 }
 
 # (Re)reads the settings and computes VSVDB_EFF; logs setting problems once per distinct problem.
+# VSVDB_EFF is cached: it only changes when VSVDB/PRIMARIES/MAXLUM change, so lldv_effective
+# (which spawns subshells for primaries/maxlum) runs once per settings change, not every poll.
+_CFG_KEY=""
 reload_cfg() {
     . "$MODDIR/lldv_cfg.sh"
-    lldv_effective
+    _key="${VSVDB}|${PRIMARIES}|${MAXLUM}"
+    if [ "$_key" != "$_CFG_KEY" ]; then
+        lldv_effective
+        _CFG_KEY="$_key"
+    fi
     _msg="$LLDV_CFG_WARN$CFG_ERRORS"
     if [ "$_msg" != "$LAST_CFG_MSG" ]; then
         LAST_CFG_MSG=$_msg
@@ -60,15 +67,23 @@ edid_cmd() {
     printf '%s' "$1" > "$E/edid"
 }
 
-# Value of a sysfs node with CR/LF/space stripped
+# Value of a sysfs node with CR/LF/space stripped. Uses read -r instead of cat | tr so an
+# idle poll starts one subprocess instead of two (read/set/printf are shell builtins;
+# tr is only used to strip the CR some sysfs files carry).
 rd() {
-    _v=$(cat "$1" 2>/dev/null | tr -d '\r\n ')
-    echo "$_v"
+    _v=""
+    read -r _v < "$1" 2>/dev/null || true
+    _v=$(printf '%s' "$_v" | tr -d '\r')
+    set -- $_v
+    _v=$1
+    printf '%s\n' "$_v"
 }
 
 # 0 when the sink reports Dolby Vision (real or injected). dv_cap2 is the unmasked copy of dv_cap.
+# Reads only the first line with read -r instead of head -1.
 sink_has_dv() {
-    _l=$(head -1 "$E/dv_cap2" 2>/dev/null)
+    _l=""
+    read -r _l < "$E/dv_cap2" 2>/dev/null || true
     case "$_l" in
         "" | *"don't support"*) return 1 ;;
     esac
@@ -80,7 +95,9 @@ vsvdb_now() {
     _vl=$(grep -m1 'VSVDB:' "$E/dv_cap2" 2>/dev/null)
     _vl=${_vl#*VSVDB: }
     case "$_vl" in *VSVDB*) _vl= ;; esac
-    echo "$_vl" | tr -d '\r\n '
+    set -- $_vl
+    _vl=$1
+    printf '%s\n' "$_vl"
 }
 
 # md5 of the EDID the kernel currently holds
@@ -121,11 +138,24 @@ do_inject() {
 
     edid_cmd "$CMD_LOAD_PATCHED" || return 1
     sleep 2
-    if ! sink_has_dv; then
-        log "ERROR loaded EDID but the kernel still reports no DV; restoring the original EDID"
-        edid_cmd "$CMD_LOAD_ORIG"
-        return 1
-    fi
+    # Give the kernel a few more seconds to re-parse the EDID and report DV.
+    # Some sinks take longer than 2 s; retrying the check avoids a spurious
+    # restore of the original EDID. We only re-read dv_cap2 (read-only sysfs);
+    # we do not write to the edid node again.
+    _tries=0
+    while [ "$_tries" -lt 2 ]; do
+        if sink_has_dv; then
+            plug_cycle
+            INJECTED=$VSVDB_EFF
+            log "$2 Dolby VSVDB $VSVDB_EFF (EDID now $(wc -c < "$PATCHED") bytes, kernel reports $(vsvdb_now)) and cycled fake_plug"
+            return 0
+        fi
+        _tries=$((_tries + 1))
+        [ "$_tries" -lt 2 ] && sleep 2
+    done
+    log "ERROR loaded EDID but the kernel still reports no DV; restoring the original EDID"
+    edid_cmd "$CMD_LOAD_ORIG"
+    return 1
 
     plug_cycle
     INJECTED=$VSVDB_EFF
