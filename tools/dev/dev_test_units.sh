@@ -165,5 +165,36 @@ check() {
       unset LLDV_RAWEDID LLDV_ORIGEDID
   fi
 
+  echo "== watcher helpers (the real rd, sink_has_dv, vsvdb_now from lldv_watch.sh, on fake sysfs files)"
+  W=$U/watch_fns.sh
+  { sed -n '/^_CR=/p' $M/lldv_watch.sh; for _f in rd sink_has_dv vsvdb_now; do sed -n "/^$_f() {/,/^}/p" $M/lldv_watch.sh; done; } > $W
+  . $W
+  E=$U/sys
+  mkdir -p $E
+  printf '1\r\n' > $E/hpd_state
+  printf '0' > $E/hdr_priority_mode
+  printf '  1  \n' > $E/spaces
+  check "rd value with CRLF"          "$(rd $E/hpd_state)" "1"
+  check "rd value without newline"    "$(rd $E/hdr_priority_mode)" "0"
+  check "rd value with spaces"        "$(rd $E/spaces)" "1"
+  check "rd missing node is silent"   "$(rd $E/nonexistent 2>&1)" ""
+  printf 'DolbyVision RX support list:\nVSVDB Version: V2\n' > $E/dv_cap2
+  if sink_has_dv; then _r=yes; else _r=no; fi
+  check "sink_has_dv with DV"         "$_r" yes
+  printf "The Rx don't support DolbyVision\r\n" > $E/dv_cap2
+  if sink_has_dv; then _r=yes; else _r=no; fi
+  check "sink_has_dv without DV, CRLF" "$_r" no
+  : > $E/dv_cap2
+  if sink_has_dv; then _r=yes; else _r=no; fi
+  check "sink_has_dv empty node"      "$_r" no
+  rm -f $E/dv_cap2
+  if sink_has_dv; then _r=yes; else _r=no; fi
+  check "sink_has_dv missing node"    "$_r" no
+  check "sink_has_dv missing node is silent" "$(sink_has_dv 2>&1)" ""
+  printf 'DolbyVision RX support list:\r\nVSVDB: eb0146d000490348a15855a2\r\nmore\n' > $E/dv_cap2
+  check "vsvdb_now with CRLF"         "$(vsvdb_now)" "eb0146d000490348a15855a2"
+  printf "The Rx don't support DolbyVision\n" > $E/dv_cap2
+  check "vsvdb_now without DV"        "$(vsvdb_now)" ""
+
   echo "== summary: PASS=$PASS FAIL=$FAIL"
 } >> $O 2>&1

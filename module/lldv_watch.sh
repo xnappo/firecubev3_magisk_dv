@@ -67,23 +67,25 @@ edid_cmd() {
     printf '%s' "$1" > "$E/edid"
 }
 
-# Value of a sysfs node with CR/LF/space stripped. Uses read -r instead of cat | tr so an
-# idle poll starts one subprocess instead of two (read/set/printf are shell builtins;
-# tr is only used to strip the CR some sysfs files carry).
+# Value of a sysfs node with CR/LF/space stripped. Built from shell builtins only (read, set, printf): no cat,
+# tr or head to start on every poll. Some nodes end in CRLF (hpd_state does not, hdr_priority_mode does), and
+# read -r keeps the CR, so it is cut off with a CR held in a variable set once (a fork here would defeat the point).
+# The braces matter: a failing "read < file" redirect reports its error before a trailing 2>/dev/null applies.
+_CR=$(printf '\r')
 rd() {
     _v=""
-    read -r _v < "$1" 2>/dev/null || true
-    _v=$(printf '%s' "$_v" | tr -d '\r')
+    { read -r _v < "$1"; } 2>/dev/null || true
+    _v=${_v%"$_CR"}
     set -- $_v
     _v=$1
     printf '%s\n' "$_v"
 }
 
 # 0 when the sink reports Dolby Vision (real or injected). dv_cap2 is the unmasked copy of dv_cap.
-# Reads only the first line with read -r instead of head -1.
+# Only its first line is needed (read -r, not head -1).
 sink_has_dv() {
     _l=""
-    read -r _l < "$E/dv_cap2" 2>/dev/null || true
+    { read -r _l < "$E/dv_cap2"; } 2>/dev/null || true
     case "$_l" in
         "" | *"don't support"*) return 1 ;;
     esac
@@ -95,6 +97,7 @@ vsvdb_now() {
     _vl=$(grep -m1 'VSVDB:' "$E/dv_cap2" 2>/dev/null)
     _vl=${_vl#*VSVDB: }
     case "$_vl" in *VSVDB*) _vl= ;; esac
+    _vl=${_vl%"$_CR"}
     set -- $_vl
     _vl=$1
     printf '%s\n' "$_vl"

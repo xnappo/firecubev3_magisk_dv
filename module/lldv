@@ -7,8 +7,7 @@
 #   lldv list                      the selectable maxLum values and colour-primary presets
 #   lldv set maxlum <cd/m2>|0      peak luminance to advertise (nearest of 32 steps; 0 = base block's own value)
 #   lldv set primaries <preset>    BT709 | BT2020 | DCI-P3 | LS12000 | base (= the base block's own primaries)
-#   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base (the
-#                                  Magisk app's Action button runs this)
+#   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base
 #   lldv reset [maxlum|primaries]  remove the override(s); the module's lldv.conf defaults apply again
 #   lldv edid [orig]               the EDID as hex, 16 bytes per line, ready to paste into an EDID analyzer.
 #                                  Default = the live EDID the kernel holds now (includes the injected block);

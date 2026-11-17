@@ -5,7 +5,7 @@ Vision, the module adds a Dolby Vision VSVDB to the EDID the Cube works from, so
 Vision (LLDV)** to a display that cannot do DV itself (a projector, for example). It re-applies the change after
 hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 
-Current version: **v0.2.2** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
+Current version: **v0.2.3** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
 kernel 5.4.125-ab25, Magisk 30.7.
 
 > Unofficial, no warranty, you need root. The module changes the EDID the Cube's kernel works from; a boot-loop guard
@@ -34,16 +34,16 @@ handful are made per injection. Implementation details and device quirks are in 
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.2.2.zip`](dist/firecube_lldv-v0.2.2.zip) (about 18 KB), version
-v0.2.2. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
-`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.2.zip` (PowerShell). The
-build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.2.zip` regenerates the same bytes.
+The ready-built module is [`dist/firecube_lldv-v0.2.3.zip`](dist/firecube_lldv-v0.2.3.zip) (about 19 KB), version
+v0.2.3. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.2.3.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.2.3.zip` regenerates the same bytes.
 
 Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
-adb push dist/firecube_lldv-v0.2.2.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.2.zip"
+adb push dist/firecube_lldv-v0.2.3.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.2.3.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -67,7 +67,7 @@ The `lldv` command (run as root) changes them. The running watcher picks the cha
 | `lldv list` | the selectable maxLum values and primaries presets |
 | `lldv set maxlum <cd/m2>` | peak luminance; snaps to the nearest of 32 steps; `0` keeps the base block's value |
 | `lldv set primaries <name>` | `BT709`, `BT2020`, `DCI-P3`, `LS12000`, or `base` |
-| `lldv cycle` | next primaries preset (the Magisk app's **Action** button runs this) |
+| `lldv cycle` | next primaries preset |
 | `lldv reset [maxlum\|primaries]` | remove the override(s) |
 | `lldv edid [orig]` | the EDID as hex, 16 bytes per line, to paste into an EDID analyzer (see below) |
 | `lldv log [n]` | tail of `/data/local/tmp/lldv.log` |
@@ -130,10 +130,12 @@ Tested on the Cube:
 | Injection after a cable pull and replug | log and kernel events |
 | Display switched from DV to non-DV | no injection while the display reported DV; one injection after the switch |
 | Standby wake | kernel re-read the EDID at late resume with no plug event; watcher re-injected about 5 s later |
-| Live settings change (`lldv set`, Action button) | each change re-injected the new block, no reboot |
+| Live settings change (`lldv set`, `lldv cycle`) | each change re-injected the new block, no reboot |
 | All four primaries presets and maxLum (v0.2.2) | the VSVDB the kernel reports matches the expected bytes for every preset, DCI-P3 + maxLum 1000 and a bad preset name (`captures/test82_watch4_v022.txt`) |
 | Boot-loop guard counting and its 5-minute clear | real boots |
-| Shell code on the device (v0.2.2) | 72 unit checks pass under both the adb shell and Magisk's busybox ash, and 17 primaries checks pass (`captures/test80_units_v022.txt`, `test81_gamut_v022.txt`) |
+| Shell code on the device (v0.2.3) | 83 unit checks pass under both the adb shell and Magisk's busybox ash, including the watcher's sysfs readers on CRLF, empty and missing files (`captures/test96_units_v023.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
+| Action button (v0.2.3) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
+| Watcher pass on the new code (v0.2.3) | a single `--once` pass under both shells reads the display state and exits cleanly (`captures/test97_once_v023.txt`) |
 | `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
 ## Troubleshooting and removal
@@ -151,7 +153,7 @@ Tested on the Cube:
 |---|---|
 | `module/` | the Magisk module (what goes in the zip) |
 | `module/lldv_watch.sh` | the watcher; `lldv_edid.sh` EDID patcher; `lldv_lum.sh` maxLum; `lldv_gamut.sh` primaries; `lldv_cfg.sh` settings; `lldv_guard.sh` boot-loop guard |
-| `module/lldv`, `action.sh` | the settings command and the Magisk Action button |
+| `module/lldv`, `action.sh` | the settings command and the Magisk Action button (read-only: shows the settings, status, recent log and example commands) |
 | `tools/` | `build_zip.py`, `dv_vsvdb.py` (VSVDB decoder, maxLum table, gamut reference encoder), `edid_tool.py` |
 | `tools/dev/` | scripts pushed to `/data/local/tmp` and run as root on the Cube during development (tests, status, probes) |
 | `tools/wsl/` | scripts that run in WSL/Linux (extract Amazon's source, regenerate reports) |
@@ -181,6 +183,7 @@ crash. The EDID route needs none of that.
 
 | Version | Changes |
 |---|---|
+| v0.2.3 | After loading the patched EDID the watcher re-checks for DV twice (2 s apart) instead of once, and if the kernel still reports no DV it **keeps the patched EDID loaded** (it used to restore the display's own EDID, which left the Cube without DV until the next hotplug or reboot); it logs a `WARN` and backs off, so the `edid` node is not hammered. A poll pass starts far fewer processes (the effective VSVDB is cached, sysfs nodes are read with shell builtins): about 0.9% to about 0.55% of the Cube's CPU. The Magisk **Action** button is now read-only: it shows the version, settings, display and watcher state, the last log lines and example `su` commands, and no longer steps the primaries (use `lldv cycle`). |
 | v0.2.2 | `PRIMARIES` presets round down to the 1/256 step instead of to the nearest one, matching a known-good LS12000 calibration EDID bit for bit. New preset blocks: BT709 `…99321ea7`, BT2020 `…5798a953` (same as the default base block), DCI-P3 `…8760768f`, LS12000 `…a15855a2`. |
 | v0.2.1 | New read-only `lldv edid [orig]` command: prints the live (or the display's original) EDID as hex for an EDID analyzer. |
 | v0.2.0 | First release: state-polling watcher, extra CTA block with the Dolby VSVDB, re-injection after boot, hotplug and standby wake, maxLum and primaries settings, `lldv` command and Magisk Action button, boot-loop guard. |

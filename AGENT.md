@@ -65,6 +65,15 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes
   the count (byte 126; HF-EEODB branch exists but is untested) and checksums.
+- `do_inject` (v0.2.3): after `load`, `dv_cap2` is re-read up to twice, 2 s apart. If the kernel still reports no DV,
+  the patched EDID **stays loaded** (WARN in the log, `LAST_FAIL` + `HOLDOFF` stop retries); it no longer loads the
+  original back, because a patched EDID that worked once is assumed good and the old restore left the Cube without DV
+  after a slow sink (seen on a real box, 2026-11-15 18:05). Poll passes avoid forks: `rd`, `sink_has_dv` and
+  `vsvdb_now` use shell builtins (CR cut off with `${v%"$_CR"}`), and `VSVDB_EFF` is recomputed only when
+  `VSVDB|PRIMARIES|MAXLUM` change. The unit tests extract the real functions from `lldv_watch.sh` with `sed`, so keep
+  each of them as a top-level `name() {` ... `}` block and `_CR=` on a line of its own.
+- Do not delete `/dev/lldv_watch.pid` while a watcher runs (dev scripts did, and left three watchers writing to the
+  `edid` node); stop the old one first. Magisk's double `service.sh` start is already handled by the pid check.
 - `module/lldv_lum.sh`, `lldv_gamut.sh`: pure functions on a VSVDB hex string -> new hex string or `ERR:...`.
   Python reference implementations live in `tools/dv_vsvdb.py`; if you change one, change both and diff the output.
 - `module/lldv_cfg.sh`: settings layers. `lldv_effective` computes `VSVDB_EFF`. Sourced files run as shell, hence the
@@ -72,7 +81,7 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 - `module/lldv_guard.sh`: boot-loop guard, state in `/data/adb/lldv_boot_state` (`<boot_id> <count> <tripped>`).
 - `module/lldv`: the user command (`show list set cycle reset edid log`). `lldv edid` is read-only: stdout is only hex,
   the summary goes to stderr, and it never writes to the `edid` node. `module/action.sh`: Magisk Action button
-  (= `lldv cycle` + `show`).
+  (read-only: module version + `lldv show` + example `su` commands; it must not change any setting).
 
 ## Workflow
 
@@ -86,7 +95,7 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   write `dist/SHA256SUMS` (`<sha256>  <zipname>`, LF, no BOM), add the new zip to the `dist/` allow-list in
   `.gitignore`, update the version in README's Install section, commit the zip with the code, then push. Only the
   current release zip is tracked; do not commit older dev builds.
-- Unit tests: `tools/dev/dev_run_units.sh` (72 checks, both shells; push `captures/edid_orig.bin` and
+- Unit tests: `tools/dev/dev_run_units.sh` (83 checks, both shells; push `captures/edid_orig.bin` and
   `edid_nodv_plus_dv3.bin` to `/data/local/tmp` first, the `lldv edid` tests read them). Live tests need the in-line
   DV/non-DV box. `tools/dev/dev_check_edid_cmd.sh` compares `lldv edid` with the EDID files the watcher loaded.
 - **Windows host gotchas:** shell scripts must be LF (`.gitattributes` enforces it). adb output often was not

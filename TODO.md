@@ -2,7 +2,8 @@
 
 ## Make the watcher's poll pass cheaper — IMPLEMENTED (v0.2.3)
 
-Status: done. Committed as aa0b910. Changes to module/lldv_watch.sh:
+Status: done, released in v0.2.3 (first committed as aa0b910, finished in the v0.2.3 release commit). Changes to
+module/lldv_watch.sh (note: if the retries still fail, the patched EDID is now kept, see AGENT.md):
 
 1. **do_inject() retry**: after loading the patched EDID, re-check dv_cap2 up to
    two more times (2 s apart) before restoring the original EDID. Only dv_cap2

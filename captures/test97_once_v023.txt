@@ -1,0 +1,15 @@
+wakefulness:   mWakefulness=Asleep
+sink before: DolbyVision RX support list:
+== syntax
+sh -n ok
+busybox -n ok
+== --once under adb shell
+rc=1
+== --once under busybox ash
+rc=1
+sink after: DolbyVision RX support list:
+VSVDB after: VSVDB: eb0146d000490348a15855a2
+== temp log
+cat: /data/local/tmp/once.log: No such file or directory
+pid file: 24923
+DONE

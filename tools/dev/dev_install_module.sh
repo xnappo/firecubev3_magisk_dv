@@ -3,7 +3,7 @@
 # Output -> /data/local/tmp/install_out.txt
 T=/data/local/tmp
 O=$T/install_out.txt
-Z=${1:-$T/firecube_lldv-v0.2.2.zip}
+Z=${1:-$T/firecube_lldv-v0.2.3.zip}
 {
   echo "magisk: $(magisk -v)"
   echo "== modules before"

@@ -1,0 +1,41 @@
+##### conf before: PRIMARIES=LS12000 
+##### shell: /system/bin/sh
+Fire TV Cube 3 Dolby Vision (LLDV) v0.2.2
+
+== settings (defaults < /data/adb/modules/firecube_lldv/lldv.conf < /data/adb/lldv.conf)
+base VSVDB : eb0146d0004903485798a953
+primaries  : LS12000
+maxlum     : 385 -> code 9 = 372 cd/m2
+effective  : eb0146d000490348a15855a2
+override   : /data/adb/lldv.conf: PRIMARIES=LS12000 
+
+== display
+hpd_state  : 1   sink_type: repeater
+status     : DolbyVision-Lowlatency
+dv_cap2    : DolbyVision RX support list:
+reported   : eb0146d000490348a15855a2
+
+== watcher
+running, pid 24923
+
+== last log lines
+11-17 03:15:58 sink reports no Dolby Vision (edid bc727f6c37e659c7defaf950cfc7c050)
+11-17 03:15:58 sink reports no Dolby Vision (edid bc727f6c37e659c7defaf950cfc7c050)
+11-17 03:15:58 sink reports no Dolby Vision (edid bc727f6c37e659c7defaf950cfc7c050)
+11-17 03:16:03 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+11-17 03:16:03 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+11-17 03:16:03 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+
+== change settings (run as root, e.g. from adb shell; the watcher applies a change within seconds)
+su -c '/data/adb/modules/firecube_lldv/lldv set maxlum 385'
+su -c '/data/adb/modules/firecube_lldv/lldv set primaries DCI-P3'     (BT709 | BT2020 | DCI-P3 | LS12000 | base)
+su -c '/data/adb/modules/firecube_lldv/lldv cycle'                    (next primaries preset)
+su -c '/data/adb/modules/firecube_lldv/lldv reset'                    (back to the module defaults)
+su -c '/data/adb/modules/firecube_lldv/lldv list'                     (selectable maxLum values and presets)
+su -c '/data/adb/modules/firecube_lldv/lldv edid'                     (EDID as hex for an EDID analyzer)
+su -c '/data/adb/modules/firecube_lldv/lldv log 50'                   (more log lines)
+##### rc=0
+##### busybox ash standalone
+##### rc=0
+##### conf after: PRIMARIES=LS12000 
+DONE
