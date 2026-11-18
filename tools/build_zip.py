@@ -10,7 +10,7 @@ import os
 import sys
 import zipfile
 
-EXEC = {"service.sh", "customize.sh", "uninstall.sh", "lldv_watch.sh", "action.sh", "lldv", "update-binary"}
+EXEC = {"service.sh", "customize.sh", "uninstall.sh", "lldv_watch.sh", "lldv_web.sh", "action.sh", "lldv", "update-binary", "lldv.cgi"}
 
 
 def main():

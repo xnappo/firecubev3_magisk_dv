@@ -27,4 +27,7 @@ while [ ! -e /sys/class/amhdmitx/amhdmitx0/dv_cap2 ]; do
     sleep 2
 done
 
+# Optional and off by default; lldv_web.sh returns immediately when WEB is not 1.
+sh "$MODDIR/lldv_web.sh"
+
 exec sh "$MODDIR/lldv_watch.sh"

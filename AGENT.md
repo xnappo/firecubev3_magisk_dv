@@ -61,6 +61,15 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 
 ## Code map
 
+- `tools/dev/dev_test_web.sh` runs the CGI under both shells with an isolated override and a dummy password; it
+  checks valid/invalid POSTs and that the real `/data/adb/lldv.conf` is unchanged. HTTP auth and LAN reachability
+  were tested from a PC, and a real `WEB=1` reboot (install, boot, browser POST, watcher re-inject, restore) is
+  captured in `captures/test100_boot_web_v030.txt` / `test101_restore_v030.txt`.
+- `module/lldv_web.sh` and `module/www/cgi-bin/lldv.cgi`: optional LAN browser UI, started by `service.sh` only when
+  `WEB=1`. It is off by default and refuses to start without a safe, non-empty `WEB_PASS`. `httpd` runs as root, so
+  the CGI only accepts fixed primaries/maxLum values and calls the existing `lldv` command; it never writes to the
+  `edid` node. `WEB_PASS` is redacted from `lldv show` and the page. This is HTTP Basic Auth, not HTTPS: document it
+  as LAN-only and do not expose it to the internet. Changes to `service.sh` still need real boot testing.
 - `module/lldv_watch.sh`: watcher. `check_once` -> `inject_new` (save, patch, load, verify, plug cycle) or
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes

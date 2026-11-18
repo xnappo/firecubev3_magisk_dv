@@ -1,0 +1,32 @@
+boot_completed: 1  uptime: 2249.02 s
+installed: version=v0.3.0
+update flag present: ls: /data/adb/modules/firecube_lldv/update: No such file or directory
+disable flag: ls: /data/adb/modules/firecube_lldv/disable: No such file or directory
+-rwxr-xr-x 1 root root 2002 2026-11-18 16:16 /data/adb/modules/firecube_lldv/lldv_web.sh
+-rwxr-xr-x 1 root root 4303 2026-11-18 16:16 /data/adb/modules/firecube_lldv/www/cgi-bin/lldv.cgi
+httpd pid file: 2239
+watcher pid file: 690
+httpd process: pid 2239 cmd: /data/adb/magisk/busybox httpd -f -p 18765 -h /data/adb/modules/firecube_lldv/www -c /dev/lldv_httpd.conf 
+watcher process: pid 690 ppid 1
+/data/local/tmp/dev_boot_web_check.sh[33]: can't open /proc/9451/cmdline: No such file or directory
+watcher processes: 1   httpd processes: 1
+== log since last boot
+11-18 16:17:01 boot guard: counted:1 (limit 4 unstable boots in a row)
+11-18 16:17:01 boot guard: repeat:1 (limit 4 unstable boots in a row)
+11-18 16:17:09 watcher started (pid 690, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372
+11-18 16:17:10 web: listening on port 18765 (Basic Auth user lldv)
+11-18 16:17:12 sink reports no Dolby Vision (edid 03dd0deaea941352eb31eb5da2f32ed8)
+11-18 16:17:26 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_p
+11-18 16:22:00 boot guard: stable for 5 minutes, counter cleared
+== real config (password hidden)
+MAXLUM=372
+PRIMARIES=LS12000
+WEB=1
+WEB_PORT=18765
+WEB_USER=lldv
+WEB_PASS=********
+== httpd.conf mode
+-rw------- 1 root root 29 2026-11-18 16:17 /dev/lldv_httpd.conf
+== display
+VSVDB: 
+DONE

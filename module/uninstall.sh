@@ -7,3 +7,9 @@ if [ -f /dev/lldv_watch.pid ]; then
 fi
 rm -rf /data/local/tmp/lldv /data/local/tmp/lldv.log /data/local/tmp/lldv.log.tmp /data/adb/lldv_boot_count
 rm -f /dev/ed /dev/lldv_p /dev/lldv_o
+if [ -f /dev/lldv_httpd.pid ]; then
+    kill "$(cat /dev/lldv_httpd.pid)" 2>/dev/null
+    rm -f /dev/lldv_httpd.pid
+fi
+rm -f /dev/lldv_httpd.conf
+rm -f /data/local/tmp/lldv_httpd.log

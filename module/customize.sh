@@ -19,6 +19,7 @@ ui_print "- Log: /data/local/tmp/lldv.log"
 ui_print "- Boot-loop guard: the module disables itself after 4 unstable boots in a row"
 
 set_perm_recursive "$MODPATH" 0 0 0755 0644
-for f in service.sh lldv_watch.sh uninstall.sh action.sh lldv; do
+for f in service.sh lldv_watch.sh uninstall.sh action.sh lldv lldv_web.sh; do
     set_perm "$MODPATH/$f" 0 0 0755
 done
+set_perm "$MODPATH/www/cgi-bin/lldv.cgi" 0 0 0755
