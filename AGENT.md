@@ -61,15 +61,16 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
 
 ## Code map
 
-- `tools/dev/dev_test_web.sh` runs the CGI under both shells with an isolated override and a dummy password; it
+- `tools/dev/dev_test_web.sh` runs the CGI under both shells with an isolated override; it
   checks valid/invalid POSTs and that the real `/data/adb/lldv.conf` is unchanged. HTTP auth and LAN reachability
-  were tested from a PC, and a real `WEB=1` reboot (install, boot, browser POST, watcher re-inject, restore) is
-  captured in `captures/test100_boot_web_v030.txt` / `test101_restore_v030.txt`.
+  were tested from a PC, and real `WEB=1` reboots (install, boot, browser POST, watcher re-inject, restore) are
+  captured in `captures/test100_boot_web_v030.txt` / `test101_restore_v030.txt` (v0.3.0, with auth) and
+  `captures/test104_boot_web_v031.txt` / `test105_restore_v031.txt` (v0.3.1, no auth).
 - `module/lldv_web.sh` and `module/www/cgi-bin/lldv.cgi`: optional LAN browser UI, started by `service.sh` only when
-  `WEB=1`. It is off by default and refuses to start without a safe, non-empty `WEB_PASS`. `httpd` runs as root, so
-  the CGI only accepts fixed primaries/maxLum values and calls the existing `lldv` command; it never writes to the
-  `edid` node. `WEB_PASS` is redacted from `lldv show` and the page. This is HTTP Basic Auth, not HTTPS: document it
-  as LAN-only and do not expose it to the internet. Changes to `service.sh` still need real boot testing.
+  `WEB=1` (off by default). **No authentication** (removed in v0.3.1 at the owner's request: trusted home network
+  only). `httpd` (Magisk's BusyBox) runs as root, so the CGI only accepts fixed primaries/maxLum values and calls
+  the existing `lldv` command; it never writes to the `edid` node. It is unencrypted and open: README must keep
+  warning "trusted LAN only, never internet-exposed". Changes to `service.sh` still need real boot testing.
 - `module/lldv_watch.sh`: watcher. `check_once` -> `inject_new` (save, patch, load, verify, plug cycle) or
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes

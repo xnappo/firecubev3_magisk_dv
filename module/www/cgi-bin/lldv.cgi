@@ -21,8 +21,7 @@ selected() {
 
 page() {
     _msg=$1
-    # lldv show includes the override file; never expose WEB_PASS in the browser.
-    _show=$(sh "$L" show 2>&1 | sed 's/WEB_PASS=[^ ]*/WEB_PASS=********/g')
+    _show=$(sh "$L" show 2>&1)
     _esc=$($BB httpd -e "$_show")
     _msg_esc=$($BB httpd -e "$_msg")
     _cur_p=${PRIMARIES:-base}

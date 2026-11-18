@@ -5,7 +5,7 @@ Vision, the module adds a Dolby Vision VSVDB to the EDID the Cube works from, so
 Vision (LLDV)** to a display that cannot do DV itself (a projector, for example). It re-applies the change after
 hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 
-Current version: **v0.3.0** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
+Current version: **v0.3.1** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
 kernel 5.4.125-ab25, Magisk 30.7.
 
 > Unofficial, no warranty, you need root. The module changes the EDID the Cube's kernel works from; a boot-loop guard
@@ -31,19 +31,22 @@ handful are made per injection. Implementation details and device quirks are in 
 
 - Fire TV Cube 3rd gen (`ro.product.device` = `gazelle`), rooted with Magisk 20.4 or newer (tested with 30.7).
 - The installer refuses other devices and firmware without `/sys/class/amhdmitx/amhdmitx0/dv_cap2`.
+- The optional browser UI uses the BusyBox `httpd` bundled with Magisk (`/data/adb/magisk/busybox`, present in
+  normal Magisk installs; confirmed v1.36.1.1). No extra packages are needed. Without Magisk's BusyBox the rest of
+  the module still works, but the browser UI will not start.
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.3.0.zip`](dist/firecube_lldv-v0.3.0.zip) (about 19 KB), version
-v0.3.0. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
-`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.3.0.zip` (PowerShell). The
-build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.3.0.zip` regenerates the same bytes.
+The ready-built module is [`dist/firecube_lldv-v0.3.1.zip`](dist/firecube_lldv-v0.3.1.zip) (about 23 KB), version
+v0.3.1. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.3.1.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.3.1.zip` regenerates the same bytes.
 
 Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
-adb push dist/firecube_lldv-v0.3.0.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.3.0.zip"
+adb push dist/firecube_lldv-v0.3.1.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.3.1.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -123,24 +126,20 @@ You can also edit `/data/adb/lldv.conf` by hand (`VSVDB=`, `MAXLUM=`, `PRIMARIES
 ### Optional browser UI
 
 A small browser page is available for changing primaries and maxLum without `adb`. It is **disabled by default**.
-To enable it, add these lines to `/data/adb/lldv.conf` (root-owned, mode `600`), choosing your own password:
+To enable it, add these lines to `/data/adb/lldv.conf` (root-owned, mode `600`):
 
 ```
 WEB=1
 WEB_PORT=18765
-WEB_USER=lldv
-WEB_PASS=choose-a-password
 ```
 
-Reboot, or start it immediately with `su -c 'sh /data/adb/modules/firecube_lldv/lldv_web.sh'`. Open
-`http://<cube-address>:18765/` in a phone, tablet or PC browser and sign in with that user and password.
-`WEB_USER` may contain letters, digits, `_`, `.` and `-`; `WEB_PASS` must use only letters, digits or
-`_.@#%+=,-`. The password is redacted from `lldv show`.
+Reboot, or start it immediately with `su -c 'sh /data/adb/modules/firecube_lldv/lldv_web.sh'`. Then open
+`http://<cube-address>:18765/` in a phone, tablet or PC browser.
 
-**Security:** this is unencrypted HTTP Basic Authentication on your local network, not HTTPS. Do not expose the
-port to the internet. Anyone who can reach it and authenticate can change the LLDV settings. Set `WEB=0` and
-reboot to disable it. The page never writes to the kernel's `edid` node directly; it uses the existing `lldv`
-command, and only accepts the listed primaries and luminance values.
+**Security:** the page has **no authentication and no encryption**. Anyone on your local network who can open it
+can change primaries and maxLum. Enable it only on a network you trust, and never expose the port to the internet.
+Set `WEB=0` and reboot to disable it. The page never writes to the kernel's `edid` node directly; it uses the
+existing `lldv` command, and only accepts the listed primaries and luminance values.
 
 ## Testing
 
@@ -158,8 +157,8 @@ Tested on the Cube:
 | Shell code on the device (v0.2.3) | 83 unit checks pass under both the adb shell and Magisk's busybox ash, including the watcher's sysfs readers on CRLF, empty and missing files (`captures/test96_units_v023.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
 | Action button (v0.2.3) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
 | Watcher pass on the new code (v0.2.3) | a single `--once` pass under both shells reads the display state and exits cleanly (`captures/test97_once_v023.txt`) |
-| Browser UI (v0.3.0) | authenticated GET/POST works from the PC; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`) |
-| Browser UI boot test (v0.3.0) | real reboot with `WEB=1`: the listener starts from `service.sh`, one watcher and one `httpd`; a browser POST changed primaries and the watcher re-injected the matching VSVDB; config then restored and the listener stopped (`captures/test100_boot_web_v030.txt`, `test101_restore_v030.txt`) |
+| Browser UI (v0.3.x) | GET/POST works from the PC; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`) |
+| Browser UI boot tests (v0.3.x) | real reboots with `WEB=1`: the listener starts from `service.sh`, one watcher and one `httpd`; a browser POST changed primaries and the watcher re-injected the matching VSVDB; config then restored and the listener stopped (v0.3.0: `captures/test100_boot_web_v030.txt`, `test101_restore_v030.txt`; v0.3.1, no auth: `test104_boot_web_v031.txt`, `test105_restore_v031.txt`) |
 | `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
 ## Troubleshooting and removal
@@ -178,7 +177,7 @@ Tested on the Cube:
 | `module/` | the Magisk module (what goes in the zip) |
 | `module/lldv_watch.sh` | the watcher; `lldv_edid.sh` EDID patcher; `lldv_lum.sh` maxLum; `lldv_gamut.sh` primaries; `lldv_cfg.sh` settings; `lldv_guard.sh` boot-loop guard |
 | `module/lldv`, `action.sh` | the settings command and the Magisk Action button (read-only: shows the settings, status, recent log and example commands) |
-| `module/lldv_web.sh`, `module/www/` | optional, password-protected browser UI (disabled unless `WEB=1`) |
+| `module/lldv_web.sh`, `module/www/` | optional browser UI (disabled unless `WEB=1`; no authentication, local network only) |
 | `tools/` | `build_zip.py`, `dv_vsvdb.py` (VSVDB decoder, maxLum table, gamut reference encoder), `edid_tool.py` |
 | `tools/dev/` | scripts pushed to `/data/local/tmp` and run as root on the Cube during development (tests, status, probes) |
 | `tools/wsl/` | scripts that run in WSL/Linux (extract Amazon's source, regenerate reports) |
@@ -208,6 +207,7 @@ crash. The EDID route needs none of that.
 
 | Version | Changes |
 |---|---|
+| v0.3.1 | Browser UI: authentication removed (the page now has no login at all, for trusted local networks only). BusyBox `httpd` requirement documented in Requirements. |
 | v0.3.0 | Optional password-protected browser UI (`WEB=1`, disabled by default) for primaries, maxLum and reset. It uses the existing `lldv` command, accepts only fixed values, redacts `WEB_PASS`, and is unencrypted HTTP on the local network. |
 | v0.2.3 | After loading the patched EDID the watcher re-checks for DV twice (2 s apart) instead of once, and if the kernel still reports no DV it **keeps the patched EDID loaded** (it used to restore the display's own EDID, which left the Cube without DV until the next hotplug or reboot); it logs a `WARN` and backs off, so the `edid` node is not hammered. A poll pass starts far fewer processes (the effective VSVDB is cached, sysfs nodes are read with shell builtins): about 0.9% to about 0.55% of the Cube's CPU. The Magisk **Action** button is now read-only: it shows the version, settings, display and watcher state, the last log lines and example `su` commands, and no longer steps the primaries (use `lldv cycle`). |
 | v0.2.2 | `PRIMARIES` presets round down to the 1/256 step instead of to the nearest one, matching a known-good LS12000 calibration EDID bit for bit. New preset blocks: BT709 `…99321ea7`, BT2020 `…5798a953` (same as the default base block), DCI-P3 `…8760768f`, LS12000 `…a15855a2`. |

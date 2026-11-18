@@ -1,6 +1,6 @@
 #!/system/bin/sh
 # Dev test (run as root on the Cube): exercise the web CGI under both supported shells.
-# Uses an isolated override file and a dummy password; the real /data/adb/lldv.conf must remain unchanged.
+# Uses an isolated override file; the real /data/adb/lldv.conf must remain unchanged.
 # Output -> /data/local/tmp/web_cgi_tests_out.txt
 T=/data/local/tmp
 M=$T/lldv_mod
@@ -11,8 +11,6 @@ REAL_BEFORE=$(md5sum /data/adb/lldv.conf 2>/dev/null)
 cat > "$O" <<'EOF'
 WEB=1
 WEB_PORT=18765
-WEB_USER=lldv
-WEB_PASS=webtest-9f3a7c
 PRIMARIES=LS12000
 MAXLUM=372
 EOF
@@ -30,7 +28,7 @@ run_cgi() {
 }
 for S in adb busybox; do
     run_cgi GET '' "$S" > "$T/get_$S.html" 2>&1
-    if grep -q 'Current status' "$T/get_$S.html" && ! grep -q 'webtest-9f3a7c' "$T/get_$S.html"; then echo "PASS $S GET and password redaction" >> "$OUT"; else echo "FAIL $S GET" >> "$OUT"; fi
+    if grep -q 'Current status' "$T/get_$S.html"; then echo "PASS $S GET" >> "$OUT"; else echo "FAIL $S GET" >> "$OUT"; fi
     run_cgi POST 'action=save&primaries=BT709&maxlum=372' "$S" > "$T/post_$S.txt" 2>&1
     if grep -q '^Status: 303 See Other' "$T/post_$S.txt" && grep -q '^PRIMARIES=BT709$' "$O"; then echo "PASS $S valid POST" >> "$OUT"; else echo "FAIL $S valid POST" >> "$OUT"; fi
     run_cgi POST 'action=save&primaries=bogus&maxlum=372' "$S" > "$T/bad_$S.txt" 2>&1

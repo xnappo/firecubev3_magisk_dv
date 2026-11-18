@@ -1,0 +1,9 @@
+config restored: MAXLUM=372 PRIMARIES=LS12000 
+httpd stopped
+httpd pid file now: cat: /dev/lldv_httpd.pid: No such file or directory
+watcher pid: 690
+kernel VSVDB: VSVDB: eb0146d000490348a15855a2
+11-18 17:10:14 settings changed, re-injected Dolby VSVDB eb0146d00049034899321ea7 (EDID now 384 bytes, kernel reports eb0146d00049034899321ea7) and cycled fake_plug
+11-18 17:10:51 settings changed: injected eb0146d00049034899321ea7 -> wanted eb0146d000490348a15855a2
+11-18 17:10:55 settings changed, re-injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+DONE

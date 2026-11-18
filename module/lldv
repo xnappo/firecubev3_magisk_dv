@@ -104,7 +104,7 @@ cmd_show() {
     echo "effective  : $VSVDB_EFF"
     [ -n "$CFG_ERRORS" ] && echo "WARNING    :$CFG_ERRORS"
     [ -n "$LLDV_CFG_WARN" ] && echo "WARNING    : $LLDV_CFG_WARN"
-    [ -f "$OVERRIDE" ] && echo "override   : $OVERRIDE: $(sed 's/WEB_PASS=[^ ]*/WEB_PASS=********/g' "$OVERRIDE" | tr '\n' ' ')" || echo "override   : none"
+    [ -f "$OVERRIDE" ] && echo "override   : $OVERRIDE: $(tr '\n' ' ' < "$OVERRIDE")" || echo "override   : none"
     echo
     echo "== display"
     echo "hpd_state  : $(cat $E/hpd_state 2>/dev/null | tr -d '\r\n ')   sink_type: $(cat $E/sink_type 2>/dev/null | tr -d '\r\n ')"

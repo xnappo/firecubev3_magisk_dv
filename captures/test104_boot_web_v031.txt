@@ -1,0 +1,17 @@
+v0.3.1 real boot test on 192.168.1.188 (Fire OS 7.7.1.7, Magisk 30.7), 2026-11-18.
+Config during the test: WEB=1 WEB_PORT=18765 (no WEB_USER / WEB_PASS; the auth was removed in v0.3.1).
+
+- magisk --install-module dist/firecube_lldv-v0.3.1.zip -> rc=0, module.prop version=v0.3.1 (versionCode 7)
+- After reboot: sys.boot_completed=1, uptime ~202 s at first check
+- module.prop on device: version=v0.3.1
+- Watcher: one process, pid 690, started 17:06:39 (primaries LS12000, maxlum 372)
+- Web listener: one process, pid 2199; log line:
+  "11-18 17:06:40 web: listening on port 18765 (no authentication; local network only)"
+- From the PC, no credentials:
+  GET  /cgi-bin/lldv.cgi                       -> HTTP 200
+  POST action=save&primaries=BT709&maxlum=372  -> HTTP 303
+- /data/adb/lldv.conf after the POST: WEB=1 WEB_PORT=18765 PRIMARIES=BT709 MAXLUM=372
+- Watcher applied the change: "settings changed ... -> wanted eb0146d00049034899321ea7", re-injected,
+  kernel then reported "VSVDB: eb0146d00049034899321ea7" (BT709)
+- Restore (test105): original config (MAXLUM=372 PRIMARIES=LS12000) restored, httpd killed, pid file removed,
+  watcher re-injected LS12000 (eb0146d000490348a15855a2), port 18765 refused connections afterwards.
