@@ -21,6 +21,8 @@ selected() {
 
 page() {
     _msg=$1
+    _module_version=$(grep -m1 '^version=' "$MODDIR/module.prop" 2>/dev/null | tr -d '\r')
+    _module_version=${_module_version#version=}
     _show=$(sh "$L" show 2>&1)
     _esc=$($BB httpd -e "$_show")
     _msg_esc=$($BB httpd -e "$_msg")
@@ -33,7 +35,7 @@ page() {
     header
     printf '%s\n' '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">'
     printf '%s\n' '<title>Fire Cube LLDV</title><style>body{font:16px sans-serif;max-width:60em;margin:1em auto;padding:0 1em}pre{white-space:pre-wrap;background:#eee;padding:1em}select,button{font-size:1.1em;padding:.35em;margin:.25em}label{display:inline-block;min-width:9em}.warn{color:#a00}</style></head><body>'
-    printf '%s\n' '<h1>Fire TV Cube 3 &mdash; Dolby Vision (LLDV)</h1>'
+    printf '<h1>Fire TV Cube 3 &mdash; Dolby Vision (LLDV) %s</h1>\n' "$_module_version"
     [ -n "$_msg" ] && printf '<p class="warn">%s</p>\n' "$_msg_esc"
     printf '%s\n' '<form method="post" action="/cgi-bin/lldv.cgi"><input type="hidden" name="action" value="save">'
     printf '<label for="primaries">Primaries</label><select id="primaries" name="primaries">'

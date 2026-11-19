@@ -26,9 +26,11 @@ run_cgi() {
         printf '%s' "$_body" | REQUEST_METHOD="$_method" CONTENT_LENGTH="$_len" LLDV_MODDIR=$M LLDV_OVERRIDE=$O sh "$M/www/cgi-bin/lldv.cgi"
     fi
 }
+_ver=$(grep -m1 '^version=' "$M/module.prop" | tr -d '\r')
+_ver=${_ver#version=}
 for S in adb busybox; do
     run_cgi GET '' "$S" > "$T/get_$S.html" 2>&1
-    if grep -q 'Current status' "$T/get_$S.html"; then echo "PASS $S GET" >> "$OUT"; else echo "FAIL $S GET" >> "$OUT"; fi
+    if grep -q 'Current status' "$T/get_$S.html" && grep -q "Dolby Vision (LLDV) $_ver</h1>" "$T/get_$S.html"; then echo "PASS $S GET" >> "$OUT"; else echo "FAIL $S GET" >> "$OUT"; fi
     run_cgi POST 'action=save&primaries=BT709&maxlum=372' "$S" > "$T/post_$S.txt" 2>&1
     if grep -q '^Status: 303 See Other' "$T/post_$S.txt" && grep -q '^PRIMARIES=BT709$' "$O"; then echo "PASS $S valid POST" >> "$OUT"; else echo "FAIL $S valid POST" >> "$OUT"; fi
     run_cgi POST 'action=save&primaries=bogus&maxlum=372' "$S" > "$T/bad_$S.txt" 2>&1

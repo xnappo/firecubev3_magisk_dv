@@ -91,6 +91,8 @@ after_change() {
 }
 
 cmd_show() {
+    _module_version=$(grep -m1 '^version=' "$MODDIR/module.prop" 2>/dev/null | tr -d '\r')
+    echo "version    : ${_module_version#version=}"
     echo "== settings (defaults < $MODDIR/lldv.conf < $OVERRIDE)"
     echo "base VSVDB : $VSVDB"
     echo "primaries  : ${PRIMARIES:-base block's own}"

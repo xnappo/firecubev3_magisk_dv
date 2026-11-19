@@ -13,6 +13,7 @@ fi
 ui_print "- Fire TV Cube 3: Dolby Vision (LLDV) for non-DV displays"
 ui_print "- Change settings:  su -c /data/adb/modules/firecube_lldv/lldv set maxlum 385"
 ui_print "-                   su -c /data/adb/modules/firecube_lldv/lldv set primaries DCI-P3"
+ui_print "-                   su -c /data/adb/modules/firecube_lldv/lldv set web enabled:18765"
 ui_print "-                   (the Action button in the Magisk app shows the current settings and status)"
 ui_print "- Overrides live in /data/adb/lldv.conf and survive module updates"
 ui_print "- Log: /data/local/tmp/lldv.log"

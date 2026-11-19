@@ -81,7 +81,10 @@ check() {
   export LLDV_MODDIR=$M LLDV_LOG=$U/lldv.log
   echo "11-14 00:00:00 test line" > $LLDV_LOG
   L="sh $M/lldv"
+  _expected_ver=$(grep -m1 '^version=' $M/module.prop | tr -d '\r')
+  _expected_ver=${_expected_ver#version=}
   check "show runs"          "$($L show | grep -c '== settings')" "1"
+  check "show version"       "$($L show | head -1 | tr -s ' ')" "version : $_expected_ver"
   check "show effective"     "$($L show | grep 'effective  :' | tr -s ' ')" "effective : eb0146d0004903485798a953"
   check "list has values"    "$($L list | grep -c '94 110 129')" "1"
   check "set maxlum 1000"    "$($L set maxlum 1000 | head -1)" "MAXLUM=1037 (asked for 1000, nearest selectable step, code 16)"
@@ -101,6 +104,18 @@ check() {
   check "override after reset maxlum" "$(cat $LLDV_OVERRIDE)" "PRIMARIES=BT709"
   check "reset primaries removes file" "$($L reset primaries >/dev/null; [ -f $LLDV_OVERRIDE ] && echo exists || echo gone)" "gone"
   check "reset all"          "$($L set maxlum 500 >/dev/null; $L reset >/dev/null; [ -f $LLDV_OVERRIDE ] && echo exists || echo gone)" "gone"
+  check "set web enabled"    "$($L set web enabled | head -1)" "WEB=1 WEB_PORT=18765 written to $LLDV_OVERRIDE"
+  check "override after set web enabled" "$(sort $LLDV_OVERRIDE | tr '\n' ' ')" "WEB=1 WEB_PORT=18765 "
+  check "override mode after set web" "$(ls -l $LLDV_OVERRIDE | cut -c1-10)" "-rw-------"
+  $L set primaries DCI-P3 >/dev/null
+  check "set web enabled:8080" "$($L set web enabled:8080 | head -1)" "WEB=1 WEB_PORT=8080 written to $LLDV_OVERRIDE"
+  check "override preserves primaries + updates web port" "$(sort $LLDV_OVERRIDE | tr '\n' ' ')" "PRIMARIES=DCI-P3 WEB=1 WEB_PORT=8080 "
+  check "set web bad arg"    "$($L set web enable 2>&1 | head -1)" "lldv: usage: lldv set web enabled[:port]"
+  check "set web bad port non-numeric" "$($L set web enabled:abc 2>&1 | head -1)" "lldv: web port must be numeric, got 'abc'"
+  check "set web bad port low" "$($L set web enabled:80 2>&1 | head -1)" "lldv: web port must be 1024..65535, got '80'"
+  check "set web bad port high" "$($L set web enabled:70000 2>&1 | head -1)" "lldv: web port must be 1024..65535, got '70000'"
+  check "override unchanged by bad web input" "$(sort $LLDV_OVERRIDE | tr '\n' ' ')" "PRIMARIES=DCI-P3 WEB=1 WEB_PORT=8080 "
+  $L reset >/dev/null
   check "log"                "$($L log 5)" "11-14 00:00:00 test line"
   check "unknown command"    "$($L frobnicate 2>&1 | head -1)" "lldv: unknown command 'frobnicate' (show, list, set, cycle, reset, edid, log)"
 

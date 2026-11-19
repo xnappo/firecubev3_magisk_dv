@@ -11,6 +11,7 @@ echo
 echo "== change settings (run as root, e.g. from adb shell; the watcher applies a change within seconds)"
 echo "su -c '$L set maxlum 385'"
 echo "su -c '$L set primaries DCI-P3'     (BT709 | BT2020 | DCI-P3 | LS12000 | base)"
+echo "su -c '$L set web enabled:18765'    (enable browser UI; default: enabled)"
 echo "su -c '$L cycle'                    (next primaries preset)"
 echo "su -c '$L reset'                    (back to the module defaults)"
 echo "su -c '$L list'                     (selectable maxLum values and presets)"

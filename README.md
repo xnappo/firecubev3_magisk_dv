@@ -5,7 +5,7 @@ Vision, the module adds a Dolby Vision VSVDB to the EDID the Cube works from, so
 Vision (LLDV)** to a display that cannot do DV itself (a projector, for example). It re-applies the change after
 hotplug, standby wake and boot, and leaves real Dolby Vision displays alone.
 
-Current version: **v0.3.2** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
+Current version: **v0.3.3** (see [Revision history](#revision-history)). Tested on Fire OS 7.7.1.7 (PS7717/5741),
 kernel 5.4.125-ab25, Magisk 30.7.
 
 > Unofficial, no warranty, you need root. The module changes the EDID the Cube's kernel works from; a boot-loop guard
@@ -37,16 +37,16 @@ handful are made per injection. Implementation details and device quirks are in 
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.3.2.zip`](dist/firecube_lldv-v0.3.2.zip) (about 23 KB), version
-v0.3.2. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
-`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.3.2.zip` (PowerShell). The
-build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.3.2.zip` regenerates the same bytes.
+The ready-built module is [`dist/firecube_lldv-v0.3.3.zip`](dist/firecube_lldv-v0.3.3.zip) (about 23 KB), version
+v0.3.3. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
+`sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.3.3.zip` (PowerShell). The
+build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.3.3.zip` regenerates the same bytes.
 
 Install it from the Magisk app (Modules, Install from storage) or, over adb (this is the route used in testing):
 
 ```
-adb push dist/firecube_lldv-v0.3.2.zip /data/local/tmp/
-adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.3.2.zip"
+adb push dist/firecube_lldv-v0.3.3.zip /data/local/tmp/
+adb shell su -c "magisk --install-module /data/local/tmp/firecube_lldv-v0.3.3.zip"
 ```
 
 Reboot. In testing the watcher started about 8 s after `service.sh` and had injected about 25 s after it. Check with:
@@ -164,10 +164,10 @@ Tested on the Cube:
 | Live settings change (`lldv set`, `lldv cycle`) | each change re-injected the new block, no reboot |
 | All four primaries presets and maxLum (v0.2.2) | the VSVDB the kernel reports matches the expected bytes for every preset, DCI-P3 + maxLum 1000 and a bad preset name (`captures/test82_watch4_v022.txt`) |
 | Boot-loop guard counting and its 5-minute clear | real boots |
-| Shell code on the device (v0.2.3) | 83 unit checks pass under both the adb shell and Magisk's busybox ash, including the watcher's sysfs readers on CRLF, empty and missing files (`captures/test96_units_v023.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
-| Action button (v0.2.3) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
+| Shell code on the device (v0.3.3) | 94 unit checks pass under both the adb shell and Magisk's busybox ash, including `lldv show` version output, `lldv set web enabled[:port]`, and the watcher's sysfs readers on CRLF, empty and missing files (`captures/test106_units_v032.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
+| Action button (v0.2.3+) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
 | Watcher pass on the new code (v0.2.3) | a single `--once` pass under both shells reads the display state and exits cleanly (`captures/test97_once_v023.txt`) |
-| Browser UI (v0.3.x) | GET/POST works from the PC; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`) |
+| Browser UI (v0.3.x) | GET/POST works from the PC; version heading verified; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`, `test107_web_v032.txt`) |
 | Browser UI boot tests (v0.3.x) | real reboots with `WEB=1`: the listener starts from `service.sh`, one watcher and one `httpd`; a browser POST changed primaries and the watcher re-injected the matching VSVDB; config then restored and the listener stopped (v0.3.0: `captures/test100_boot_web_v030.txt`, `test101_restore_v030.txt`; v0.3.1, no auth: `test104_boot_web_v031.txt`, `test105_restore_v031.txt`) |
 | `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
@@ -217,6 +217,7 @@ crash. The EDID route needs none of that.
 
 | Version | Changes |
 |---|---|
+| v0.3.3 | Added module version display to `lldv show` and the browser UI heading; added `lldv set web enabled:18765` to the Action button and installer command hints; added unit tests for `lldv set web` and version output (94 checks per shell). |
 | v0.3.2 | `lldv set web enabled[:port]` creates `/data/adb/lldv.conf` with `WEB=1` and `WEB_PORT=<port>`, preserving existing settings. Port defaults to 18765 and must be 1024–65535. |
 | v0.3.1 | Browser UI: authentication removed (the page now has no login at all, for trusted local networks only). BusyBox `httpd` requirement documented in Requirements. |
 | v0.3.0 | Optional password-protected browser UI (`WEB=1`, disabled by default) for primaries, maxLum and reset. It uses the existing `lldv` command, accepts only fixed values, redacts `WEB_PASS`, and is unencrypted HTTP on the local network. |
