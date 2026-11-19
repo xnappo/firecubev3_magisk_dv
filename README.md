@@ -1,3 +1,4 @@
+![Banner or Diagram](./web_page.png)
 # Fire TV Cube 3: Dolby Vision (LLDV) on non-DV displays
 
 A Magisk module for a **rooted Fire TV Cube 3rd gen ("gazelle")**. When the connected display does not report Dolby
