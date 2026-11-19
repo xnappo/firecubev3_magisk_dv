@@ -71,6 +71,9 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   only). `httpd` (Magisk's BusyBox) runs as root, so the CGI only accepts fixed primaries/maxLum values and calls
   the existing `lldv` command; it never writes to the `edid` node. It is unencrypted and open: README must keep
   warning "trusted LAN only, never internet-exposed". Changes to `service.sh` still need real boot testing.
+  `lldv set web enabled[:port]` uses `set_key()` to write `WEB=1` and `WEB_PORT=<port>` to `/data/adb/lldv.conf`.
+  It defaults to port 18765, validates numeric 1024–65535, keeps the file root-owned mode 600, and preserves the
+  other settings. It does not start `lldv_web.sh` itself; the user must reboot or run `lldv_web.sh` explicitly.
 - `module/lldv_watch.sh`: watcher. `check_once` -> `inject_new` (save, patch, load, verify, plug cycle) or
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes

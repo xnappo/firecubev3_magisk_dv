@@ -7,6 +7,8 @@
 #   lldv list                      the selectable maxLum values and colour-primary presets
 #   lldv set maxlum <cd/m2>|0      peak luminance to advertise (nearest of 32 steps; 0 = base block's own value)
 #   lldv set primaries <preset>    BT709 | BT2020 | DCI-P3 | LS12000 | base (= the base block's own primaries)
+#   lldv set web enabled[:port]    write WEB=1 and WEB_PORT=port to /data/adb/lldv.conf (default port 18765;
+#                                  the page starts at the next reboot, or via lldv_web.sh)
 #   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base
 #   lldv reset [maxlum|primaries]  remove the override(s); the module's lldv.conf defaults apply again
 #   lldv edid [orig]               the EDID as hex, 16 bytes per line, ready to paste into an EDID analyzer.
@@ -150,6 +152,28 @@ cmd_set() {
             fi
             after_change
             ;;
+        web)
+            need_root
+            case "$2" in
+                enabled | enabled:*)
+                    _port=${2#enabled}
+                    _port=${_port#:}
+                    [ -n "$_port" ] || _port=18765
+                    case "$_port" in
+                        *[!0-9]*) die "web port must be numeric, got '$_port'" ;;
+                    esac
+                    if [ "$_port" -lt 1024 ] || [ "$_port" -gt 65535 ]; then
+                        die "web port must be 1024..65535, got '$_port'"
+                    fi
+                    set_key WEB 1
+                    set_key WEB_PORT "$_port"
+                    echo "WEB=1 WEB_PORT=$_port written to $OVERRIDE"
+                    echo "the page is at http://<this-cube>:$_port/ with NO login (trusted local network only)."
+                    echo "it starts at the next reboot, or start it now: su -c 'sh $MODDIR/lldv_web.sh'"
+                    ;;
+                *) die "usage: lldv set web enabled[:port]" ;;
+            esac
+            ;;
         primaries)
             [ -n "$2" ] || die "usage: lldv set primaries BT709|BT2020|DCI-P3|LS12000|base"
             _base=$(echo "$2" | tr 'A-Z' 'a-z')
@@ -164,7 +188,7 @@ cmd_set() {
             fi
             after_change
             ;;
-        *) die "usage: lldv set maxlum <cd/m2>|0   or   lldv set primaries <preset>" ;;
+        *) die "usage: lldv set maxlum <cd/m2>|0   or   lldv set primaries <preset>   or   lldv set web enabled[:port]" ;;
     esac
 }
 
