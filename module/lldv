@@ -27,6 +27,7 @@ E=/sys/class/amhdmitx/amhdmitx0
 LOG=${LLDV_LOG:-/data/local/tmp/lldv.log}
 # where `lldv edid` reads from (overridable for the unit tests)
 EDID_LIVE=${LLDV_RAWEDID:-$E/rawedid}
+EDID_PATCHED=${LLDV_PATCHEDEDID:-/dev/lldv_p}
 EDID_ORIG=${LLDV_ORIGEDID:-/dev/lldv_o}
 
 . "$MODDIR/lldv_lum.sh"
@@ -270,6 +271,18 @@ cmd_edid() {
             _what="live EDID"
             # cat, not "tr < file": a redirect that fails prints a raw shell error before our message
             _hex=$(cat "$EDID_LIVE" 2>/dev/null | tr -d '\r\n ')
+            case "$_hex" in
+                *[!0]*) ;;
+                ?*)
+                    # In standby the kernel driver clears rawedid to 128 zero bytes; fall back to the last patched EDID if present
+                    if [ -s "$EDID_PATCHED" ]; then
+                        _what="live EDID (from $EDID_PATCHED; kernel rawedid is all-zero in standby)"
+                        _hex=$(od -An -v -tx1 "$EDID_PATCHED" | tr -d ' \012')
+                    else
+                        _hex=
+                    fi
+                    ;;
+            esac
             [ -n "$_hex" ] || die "no EDID available from $EDID_LIVE (display disconnected, or the HDMI driver is not ready)"
             ;;
         orig)

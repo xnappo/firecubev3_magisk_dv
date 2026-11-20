@@ -11,6 +11,7 @@ import sys
 import zipfile
 
 EXEC = {"service.sh", "customize.sh", "uninstall.sh", "lldv_watch.sh", "lldv_web.sh", "action.sh", "lldv", "update-binary", "lldv.cgi"}
+BINARY_EXT = {".wasm", ".bin"}
 
 
 def main():
@@ -26,7 +27,8 @@ def main():
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for arc, full in names:
             data = open(full, "rb").read()
-            data = data.replace(b"\r\n", b"\n")
+            if os.path.splitext(arc)[1].lower() not in BINARY_EXT:
+                data = data.replace(b"\r\n", b"\n")
             info = zipfile.ZipInfo(arc, date_time=(2026, 11, 14, 0, 0, 0))
             mode = 0o755 if os.path.basename(arc) in EXEC else 0o644
             info.external_attr = (0o100000 | mode) << 16

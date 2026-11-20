@@ -176,8 +176,12 @@ check() {
           od -An -v -tx1 $T/edid_nodv_plus_dv3.bin | tr -d ' \012' > $U/live3.hex
           check "edid 3 blocks lines"  "$(LLDV_RAWEDID=$U/live3.hex $L edid 2>/dev/null | wc -l | tr -d ' ')" "24"
           check "edid 3 blocks summary" "$(LLDV_RAWEDID=$U/live3.hex $L edid 2>&1 >/dev/null)" "# live EDID: 3 blocks (384 bytes), header and checksums ok"
+          printf '0000000000000000\n' > $U/live_zero.hex
+          check "edid all-zero standby fallback lines" "$(LLDV_RAWEDID=$U/live_zero.hex LLDV_PATCHEDEDID=$T/edid_nodv_plus_dv3.bin $L edid 2>/dev/null | wc -l | tr -d ' ')" "24"
+          check "edid all-zero standby fallback summary" "$(LLDV_RAWEDID=$U/live_zero.hex LLDV_PATCHEDEDID=$T/edid_nodv_plus_dv3.bin $L edid 2>&1 >/dev/null | grep -c 'all-zero in standby')" "1"
+          check "edid all-zero without patched file fails" "$(LLDV_RAWEDID=$U/live_zero.hex LLDV_PATCHEDEDID=$U/nonexistent $L edid 2>&1 | grep -c '^lldv: no EDID available from ')" "1"
       fi
-      unset LLDV_RAWEDID LLDV_ORIGEDID
+      unset LLDV_RAWEDID LLDV_ORIGEDID LLDV_PATCHEDEDID
   fi
 
   echo "== watcher helpers (the real rd, sink_has_dv, vsvdb_now from lldv_watch.sh, on fake sysfs files)"

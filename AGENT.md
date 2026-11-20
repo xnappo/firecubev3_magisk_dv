@@ -74,6 +74,9 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   `lldv set web enabled[:port]` uses `set_key()` to write `WEB=1` and `WEB_PORT=<port>` to `/data/adb/lldv.conf`.
   It defaults to port 18765, validates numeric 1024–65535, keeps the file root-owned mode 600, and preserves the
   other settings. It does not start `lldv_web.sh` itself; the user must reboot or run `lldv_web.sh` explicitly.
+  `module/www/` also bundles `edid-decode.js` and `edid-decode.wasm` (with `httpd.conf` mapping `.wasm:application/wasm`)
+  so the browser page can decode `?edid=live` and `?edid=orig` inline via WebAssembly. `tools/build_zip.py` skips
+  CRLF normalization for binary extensions (`BINARY_EXT = {".wasm", ".bin"}`).
 - `module/lldv_watch.sh`: watcher. `check_once` -> `inject_new` (save, patch, load, verify, plug cycle) or
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes
@@ -93,7 +96,8 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   ownership/permission check on `/data/adb/lldv.conf`.
 - `module/lldv_guard.sh`: boot-loop guard, state in `/data/adb/lldv_boot_state` (`<boot_id> <count> <tripped>`).
 - `module/lldv`: the user command (`show list set cycle reset edid log`). `lldv edid` is read-only: stdout is only hex,
-  the summary goes to stderr, and it never writes to the `edid` node. `module/action.sh`: Magisk Action button
+  the summary goes to stderr, and it never writes to the `edid` node (if `rawedid` is all zeros in standby, it falls
+  back to `/dev/lldv_p` when present). `module/action.sh`: Magisk Action button
   (read-only: module version + `lldv show` + example `su` commands; it must not change any setting).
 
 ## Workflow
@@ -108,7 +112,7 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   write `dist/SHA256SUMS` (`<sha256>  <zipname>`, LF, no BOM), add the new zip to the `dist/` allow-list in
   `.gitignore`, update the version in README's Install section, commit the zip with the code, then push. Only the
   current release zip is tracked; do not commit older dev builds.
-- Unit tests: `tools/dev/dev_run_units.sh` (94 checks, both shells; push `captures/edid_orig.bin` and
+- Unit tests: `tools/dev/dev_run_units.sh` (97 checks, both shells; push `captures/edid_orig.bin` and
   `edid_nodv_plus_dv3.bin` to `/data/local/tmp` first, the `lldv edid` tests read them). Live tests need the in-line
   DV/non-DV box. `tools/dev/dev_check_edid_cmd.sh` compares `lldv edid` with the EDID files the watcher loaded.
 - **Windows host gotchas:** shell scripts must be LF (`.gitattributes` enforces it). adb output often was not

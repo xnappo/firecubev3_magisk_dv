@@ -1,0 +1,14 @@
+PASS adb GET
+PASS adb GET edid=live
+PASS adb GET edid=orig
+PASS adb valid POST
+PASS adb invalid POST rejected
+PASS adb restore
+PASS busybox GET
+PASS busybox GET edid=live
+PASS busybox GET edid=orig
+PASS busybox valid POST
+PASS busybox invalid POST rejected
+PASS busybox restore
+PASS real /data/adb/lldv.conf unchanged
+DONE

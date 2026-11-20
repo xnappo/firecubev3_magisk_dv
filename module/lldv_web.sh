@@ -33,7 +33,7 @@ fi
 rm -f "$PIDF"
 : > "$WEBLOG"
 LLDV_MODDIR="$MODDIR" LLDV_OVERRIDE="$OVERRIDE" \
-    nohup /data/adb/magisk/busybox httpd -f -p "$_port" -h "$MODDIR/www" >> "$WEBLOG" 2>&1 &
+    nohup /data/adb/magisk/busybox httpd -f -p "$_port" -h "$MODDIR/www" -c "$MODDIR/www/httpd.conf" >> "$WEBLOG" 2>&1 &
 _pid=$!
 echo "$_pid" > "$PIDF"
 sleep 1

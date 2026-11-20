@@ -2,6 +2,7 @@
 # ("sh: not found" / bad interpreter), so everything text is stored and checked out with LF.
 * text=auto eol=lf
 *.bin binary
+*.wasm binary
 *.zip binary
 *.tar binary
 *.bz2 binary
