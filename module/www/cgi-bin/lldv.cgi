@@ -36,6 +36,8 @@ page() {
     cat <<'HTML'
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fire Cube LLDV</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <style>
 :root{--bg:#0f172a;--panel:#111827;--panel-light:#1f2937;--text:#e5e7eb;--muted:#9ca3af;--primary:#3b82f6;--primary-dark:#2563eb;--accent:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box}

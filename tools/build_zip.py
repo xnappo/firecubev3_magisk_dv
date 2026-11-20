@@ -11,7 +11,7 @@ import sys
 import zipfile
 
 EXEC = {"service.sh", "customize.sh", "uninstall.sh", "lldv_watch.sh", "lldv_web.sh", "action.sh", "lldv", "update-binary", "lldv.cgi"}
-BINARY_EXT = {".wasm", ".bin"}
+BINARY_EXT = {".wasm", ".bin", ".png", ".ico"}
 
 
 def main():

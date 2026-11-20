@@ -39,7 +39,7 @@ handful are made per injection. Implementation details and device quirks are in 
 
 ## Install
 
-The ready-built module is [`dist/firecube_lldv-v0.3.4.zip`](dist/firecube_lldv-v0.3.4.zip) (about 211 KB), version
+The ready-built module is [`dist/firecube_lldv-v0.3.4.zip`](dist/firecube_lldv-v0.3.4.zip) (about 220 KB), version
 v0.3.4. Its SHA-256 is in [`dist/SHA256SUMS`](dist/SHA256SUMS); check the download with
 `sha256sum -c dist/SHA256SUMS` (Linux/macOS/WSL) or `Get-FileHash dist\firecube_lldv-v0.3.4.zip` (PowerShell). The
 build is reproducible: `python3 tools/build_zip.py module dist/firecube_lldv-v0.3.4.zip` regenerates the same bytes.
