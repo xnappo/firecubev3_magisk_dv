@@ -74,7 +74,9 @@ HTML
     printf '%s\n' '<div class="card"><h2>Settings</h2><form method="post" action="/cgi-bin/lldv.cgi"><input type="hidden" name="action" value="save">'
     printf '<label for="primaries">Primaries</label><select id="primaries" name="primaries">'
     for _p in base BT709 BT2020 DCI-P3 LS12000; do
-        printf '<option value="%s"%s>%s</option>' "$_p" "$(selected "$_p" "$_cur_p")" "$_p"
+        _plbl=$_p
+        [ "$_p" = "base" ] && _plbl="base (BT2020)"
+        printf '<option value="%s"%s>%s</option>' "$_p" "$(selected "$_p" "$_cur_p")" "$_plbl"
     done
     printf '</select>\n'
     printf '<label for="maxlum">Max luminance</label><select id="maxlum" name="maxlum">'

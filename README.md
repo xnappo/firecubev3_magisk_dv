@@ -59,8 +59,8 @@ adb shell su -c /data/adb/modules/firecube_lldv/lldv show
 
 ## Settings
 
-Defaults: base block `eb0146d0004903485798a953` (VSVDB v2, low-latency only, YCbCr 4:2:2 12-bit), `MAXLUM=385`,
-primaries as in the base block. Layers, later wins: built-in defaults, the module's `lldv.conf`,
+Defaults: base block `eb0146d0004903485798a953` (VSVDB v2, low-latency only, YCbCr 4:2:2 12-bit, BT2020 primaries),
+`MAXLUM=385`, primaries as in the base block (`BT2020`). Layers, later wins: built-in defaults, the module's `lldv.conf`,
 `/data/adb/lldv.conf` (your overrides, survive module updates).
 
 The `lldv` command (run as root) changes them. The running watcher picks the change up within seconds and re-injects
@@ -71,7 +71,7 @@ The `lldv` command (run as root) changes them. The running watcher picks the cha
 | `lldv show` | settings, what the display reports, watcher state, last log lines |
 | `lldv list` | the selectable maxLum values and primaries presets |
 | `lldv set maxlum <cd/m2>` | peak luminance; snaps to the nearest of 32 steps; `0` keeps the base block's value |
-| `lldv set primaries <name>` | `BT709`, `BT2020`, `DCI-P3`, `LS12000`, or `base` |
+| `lldv set primaries <name>` | `BT709`, `BT2020`, `DCI-P3`, `LS12000`, or `base` (keeps the base block's primaries, which are `BT2020` by default) |
 | `lldv set web enabled[:port]` | enable the browser UI; optional port defaults to `18765` and is written to `/data/adb/lldv.conf` |
 | `lldv cycle` | next primaries preset |
 | `lldv reset [maxlum\|primaries]` | remove the override(s) |
@@ -151,7 +151,7 @@ Reboot, or start it immediately with `su -c 'sh /data/adb/modules/firecube_lldv/
 `http://<cube-address>:18765/` in a phone, tablet or PC browser.
 
 The page includes:
-- **Settings**: Primaries (`base`, `BT709`, `BT2020`, `DCI-P3`, `LS12000`) and Max luminance (`0` or any of the 32 steps), plus a **Reset overrides** button.
+- **Settings**: Primaries (`base (BT2020)`, `BT709`, `BT2020`, `DCI-P3`, `LS12000`) and Max luminance (`0` or any of the 32 steps), plus a **Reset overrides** button.
 - **Current status**: Full `lldv show` output (version, settings, display state, watcher PID, and recent log lines).
 - **EDID Analyzer (`edid-decode`)**: Bundles the WebAssembly build of `v4l-utils` [`edid-decode`](https://hverkuil.home.xs4all.nl/edid-decode/edid-decode.html) (`edid-decode.js` + `edid-decode.wasm`) locally in `module/www/` so your browser decodes the **Live EDID** or **Original EDID** (or any pasted hex) inline on the page with zero copy-paste and zero CPU load on the Cube.
 
