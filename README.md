@@ -135,15 +135,25 @@ Spoofing LLDV has two sides:
 1. **The player (Cube)** sees the injected Dolby Vision VSVDB in the EDID and outputs player-led LLDV (12-bit YCbCr 4:2:2, BT.2020, dynamically tone-mapped to `maxLum`) with a Dolby Vision Vendor-Specific InfoFrame (VSIF, OUI `00-D0-46`) in hardware InfoFrame Bank 8.
 2. **The display** needs to use its HDR (SMPTE ST 2084 PQ) EOTF curve. Because `hdmitx_set_vsif_pkt()` disables hardware InfoFrame Bank 6 (the standard CTA-861.3 HDR10 Dynamic Range & Mastering InfoFrame) when entering LLDV, an HDR10-only display that ignores the Dolby VSIF will stay in SDR unless you either force HDR EOTF on the display (e.g. Epson LS12000) or send an HDR10 DRM InfoFrame alongside the LLDV signal (what an external HDFury box does).
 
-On the Cube 3, the HDMI transmitter (`hdmitx21`) has independent hardware InfoFrame banks (`TPI_INFO_FSEL_IVCTX`, registers `0x06BF..0x06DF`), so **Bank 6 (HDR10 DRM InfoFrame) and Bank 8 (Dolby Vision LL VSIF) can transmit simultaneously**. If your display cannot manually force its HDR EOTF, enable `HDR_INFOFRAME`:
+On the Cube 3, the HDMI transmitter driver (`hdmitx21` in `hdmi_tx_main.c:2734-2736`) exposes an atomic `config`
+command (`echo hdr > /sys/class/amhdmitx/amhdmitx0/config`) that calls `hdmitx_set_drm_pkt()` under the driver's own
+spinlocks: it disables the Dolby Vision VSIF in Bank 8, enables the CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame
+in Bank 6 + BT.2020 in the AVI InfoFrame (Bank 0), and updates `hdr_transfer_feature = T_SMPTE_ST_2084` so the kernel's
+`hdr_work_func` does not clear it, while the Dolby Vision hardware core (`amdv`) continues outputting 12-bit YCbCr
+4:2:2 LLDV. If your display cannot manually force its HDR EOTF, enable `HDR_INFOFRAME`:
 
 ```
 su -c '/data/adb/modules/firecube_lldv/lldv set hdr_infoframe on'
 ```
 
-(or set **HDR10 InfoFrame** to `on` in the browser UI). When enabled (`HDR_INFOFRAME=1`, off by default), the watcher monitors `/sys/class/amhdmitx/amhdmitx0/hdmi_hdr_status`:
-- Whenever `hdmi_hdr_status` is `DolbyVision-Lowlatency`, it loads a CTA-861.3 HDR10 DRM InfoFrame (`87 01 1a 5c 02 00 ...`, `EOTF = 2` SMPTE ST 2084 PQ, static metadata left `0` = unspecified so the display does not double-tone-map the already-tone-mapped LLDV signal) into Bank 6 and enables hardware repeat (`0xE0`).
-- When `hdmi_hdr_status` leaves `DolbyVision-Lowlatency` (e.g. switches to `SDR` in adaptive mode) or when you run `lldv set hdr_infoframe off`, Bank 6 is cleared back to `0`.
+(or set **HDR10 InfoFrame** to `on` in the browser UI). When enabled (`HDR_INFOFRAME=1`, off by default), the watcher
+monitors `/sys/class/amhdmitx/amhdmitx0/hdmi_hdr_status`:
+- Whenever `hdmi_hdr_status` is `DolbyVision-Lowlatency` (after EDID injection, at boot, or after `amdv` re-sends the
+  Dolby VSIF on a mode/stream transition), the watcher waits 2 s for any in-progress `hdr_work_func` to finish and
+  writes `hdr` to `/sys/class/amhdmitx/amhdmitx0/config`. `hdmi_hdr_status` then reports `HDR10-GAMMA_ST2084` while
+  `attr` remains `422,12bit` LLDV and the display switches to HDR10.
+- When `hdmi_hdr_status` switches to `SDR` (e.g. in adaptive mode) or when you run `lldv set hdr_infoframe off`, the
+  module writes `sdr` to `/sys/class/amhdmitx/amhdmitx0/config` to turn the HDR10 DRM InfoFrame off.
 
 ### Optional browser UI
 
@@ -194,7 +204,7 @@ Tested on the Cube:
 | Action button (v0.2.3+) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
 | Watcher pass on the new code (v0.2.3) | a single `--once` pass under both shells reads the display state and exits cleanly (`captures/test97_once_v023.txt`) |
 | Browser UI (v0.3.x–v0.4.0) | GET/POST (including `hdr_infoframe`) and `?edid=live`/`?edid=orig` work from the PC; version heading and EDID analyzer card verified; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`, `test107_web_v032.txt`, `test108_web_edid.txt`, `test111_web_hdr_if.txt`) |
-| HDR10 InfoFrame injection (v0.4.0) | `lldv set hdr_infoframe on` / watcher enables hardware InfoFrame Bank 6 (`87 01 1a 5c 02 ...`) alongside Bank 8 (Dolby Vision LL VSIF) while `hdmi_hdr_status` remains `DolbyVision-Lowlatency`, and `reset hdr_infoframe` clears Bank 6 back to `0` (`captures/test112_live_hdr_if.txt`) |
+| HDR10 InfoFrame injection (v0.4.0) | `lldv set hdr_infoframe on` / watcher switches the HDMI TX InfoFrame state to HDR10 (`echo hdr > /sys/class/amhdmitx/amhdmitx0/config`) during `DolbyVision-Lowlatency` (`422,12bit`), confirmed switching an Epson LS12000 projector (in `Auto` dynamic-range mode through a Denon AVR) from SDR to HDR10 while LLDV stays active (`captures/test112_live_hdr_if.txt`) |
 | Browser UI boot tests (v0.3.x) | real reboots with `WEB=1`: the listener starts from `service.sh`, one watcher and one `httpd`; a browser POST changed primaries and the watcher re-injected the matching VSVDB; config then restored and the listener stopped (v0.3.0: `captures/test100_boot_web_v030.txt`, `test101_restore_v030.txt`; v0.3.1, no auth: `test104_boot_web_v031.txt`, `test105_restore_v031.txt`) |
 | `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
@@ -244,7 +254,7 @@ crash. The EDID route needs none of that.
 
 | Version | Changes |
 |---|---|
-| v0.4.0 | Added optional **HDR10 InfoFrame (`HDR_INFOFRAME=1`)** (`lldv set hdr_infoframe on\|off`, `lldv reset hdr_infoframe`, and Web UI dropdown) to transmit a CTA-861.3 HDR10 (SMPTE ST 2084 PQ) Dynamic Range & Mastering InfoFrame in hardware InfoFrame Bank 6 alongside the Dolby Vision LL VSIF in Bank 8 whenever `hdmi_hdr_status` is `DolbyVision-Lowlatency`, allowing HDR10-only displays without a manual EOTF override to automatically switch into HDR mode (104 unit checks per shell). |
+| v0.4.0 | Added optional **HDR10 InfoFrame (`HDR_INFOFRAME=1`)** (`lldv set hdr_infoframe on\|off`, `lldv reset hdr_infoframe`, and Web UI dropdown) using the kernel's atomic `/sys/class/amhdmitx/amhdmitx0/config` (`echo hdr` / `echo sdr`) handler to replace the Dolby Vision VSIF with a CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame whenever the Cube enters `DolbyVision-Lowlatency`, allowing HDR10-only displays (verified on an Epson LS12000 in `Auto` mode) to automatically switch into HDR10 EOTF mode (104 unit checks per shell). |
 | v0.3.4 | Browser UI: styled with dark slate theme, 64×64 favicon, `base (BT2020)` primaries label, and bundled local `edid-decode` WebAssembly (`edid-decode.js` + `edid-decode.wasm`) to decode the live or original EDID inline on the page. `lldv edid` now falls back to `/dev/lldv_p` when the kernel's `rawedid` is all zeros in standby (97 unit checks per shell). |
 | v0.3.3 | Added module version display to `lldv show` and the browser UI heading; added `lldv set web enabled:18765` to the Action button and installer command hints; added unit tests for `lldv set web` and version output (94 checks per shell). |
 | v0.3.2 | `lldv set web enabled[:port]` creates `/data/adb/lldv.conf` with `WEB=1` and `WEB_PORT=<port>`, preserving existing settings. Port defaults to 18765 and must be 1024–65535. |

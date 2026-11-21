@@ -78,7 +78,7 @@ check() {
   rm -f $LLDV_OVERRIDE
 
   echo "== lldv command"
-  export LLDV_MODDIR=$M LLDV_LOG=$U/lldv.log LLDV_HDR_IF_FILE=$U/hdr_if LLDV_DEBUG_NODE=$U/dbg
+  export LLDV_MODDIR=$M LLDV_LOG=$U/lldv.log LLDV_HDR_IF_FILE=$U/hdr_if LLDV_CONFIG_NODE=$U/cfg
   echo "11-14 00:00:00 test line" > $LLDV_LOG
   L="sh $M/lldv"
   _expected_ver=$(grep -m1 '^version=' $M/module.prop | tr -d '\r')
@@ -118,11 +118,11 @@ check() {
   check "set hdr_infoframe on" "$($L set hdr_infoframe on | head -1)" "HDR_INFOFRAME=1 (send HDR10 PQ InfoFrame during LLDV)"
   check "show hdr_if 1"      "$($L show | grep '^hdr_if' | tr -s ' ')" "hdr_if : 1 (send HDR10 PQ InfoFrame during LLDV)"
   check "set hdr_infoframe bad" "$($L set hdr_infoframe maybe 2>&1 | head -1)" "lldv: usage: lldv set hdr_infoframe on|off"
-  : > $U/dbg
+  : > $U/cfg
   echo 1 > $U/hdr_if
-  check "set hdr_infoframe off clears bank 6" "$(LLDV_HDR_IF_FILE=$U/hdr_if LLDV_DEBUG_NODE=$U/dbg $L set hdr_infoframe off | head -1)" "HDR_INFOFRAME=0 (off)"
+  check "set hdr_infoframe off clears via config" "$(LLDV_HDR_IF_FILE=$U/hdr_if LLDV_CONFIG_NODE=$U/cfg $L set hdr_infoframe off | head -1)" "HDR_INFOFRAME=0 (off)"
   check "hdr_if marker removed on off" "$([ -f $U/hdr_if ] && echo exists || echo gone)" "gone"
-  check "hdr_if debug commands written on off" "$(tr '\n' ',' < $U/dbg)" "wh6df 0,"
+  check "hdr_if config command written on off" "$(tr '\n' ',' < $U/cfg)" "sdr,"
   check "reset hdr_infoframe" "$($L reset hdr_infoframe | head -1)" "HDR_INFOFRAME override removed"
   $L reset >/dev/null
   check "log"                "$($L log 5)" "11-14 00:00:00 test line"

@@ -123,37 +123,24 @@ plug_cycle() {
     echo 1 > "$E/fake_plug"
 }
 
-# Writes a CTA-861.3 HDR10 (SMPTE ST 2084 PQ, EOTF=2) DRM InfoFrame into hardware InfoFrame Bank 6
-# (TPI_INFO_FSEL_IVCTX=6, registers 0x6BF..0x6DF) so HDR10-only displays switch to HDR EOTF during LLDV.
+# Switches the HDMI TX InfoFrame state from Dolby Vision VSIF (Bank 8) to CTA-861.3 HDR10 (SMPTE ST 2084 PQ)
+# DRM InfoFrame (Bank 6) + BT.2020 AVI InfoFrame via the kernel's atomic config_store handler (`echo hdr > config`),
+# while amdv continues outputting 12-bit YCbCr 4:2:2 LLDV.
+# Never write raw TPI registers via $E/debug or read /sys/kernel/debug/amhdmitx/hdmi_reg: un-locked TPI FSEL
+# writes/reads can wedge the IVCTX packet scheduler until reboot.
 hdr_if_enable() {
-    _dbg=${LLDV_DEBUG_NODE:-$E/debug}
-    [ -e "$_dbg" ] || return 1
-    echo "wh6bf 6" > "$_dbg"
-    echo "wh6c0 87" > "$_dbg"
-    echo "wh6c1 01" > "$_dbg"
-    echo "wh6c2 1a" > "$_dbg"
-    echo "wh6c3 5c" > "$_dbg"
-    echo "wh6c4 02" > "$_dbg"
-    for _r in 6c5 6c6 6c7 6c8 6c9 6ca 6cb 6cc 6cd 6ce 6cf 6d0 6d1 6d2 6d3 6d4 6d5 6d6 6d7 6d8 6d9 6da 6db 6dc 6dd 6de; do
-        echo "wh$_r 0" > "$_dbg"
-    done
-    echo "wh6df e0" > "$_dbg"
+    _cfg=${LLDV_CONFIG_NODE:-$E/config}
+    [ -e "$_cfg" ] || return 1
+    echo hdr > "$_cfg"
     echo 1 > "$HDR_IF_FILE"
-    log "HDR10 InfoFrame enabled (Bank 6: SMPTE ST 2084 PQ)"
+    log "HDR10 InfoFrame enabled (SMPTE ST 2084 PQ via config)"
     return 0
 }
 
 hdr_if_disable() {
-    _dbg=${LLDV_DEBUG_NODE:-$E/debug}
-    if [ -e "$_dbg" ]; then
-        case "$1" in
-            HDR10*) ;;
-            *)
-                echo "wh6bf 6" > "$_dbg"
-                echo "wh6c0 0" > "$_dbg"
-                echo "wh6df 0" > "$_dbg"
-                ;;
-        esac
+    _cfg=${LLDV_CONFIG_NODE:-$E/config}
+    if [ -e "$_cfg" ]; then
+        echo sdr > "$_cfg"
     fi
     rm -f "$HDR_IF_FILE"
     log "HDR10 InfoFrame disabled"
@@ -161,18 +148,17 @@ hdr_if_disable() {
 
 sync_hdr_infoframe() {
     _hst=$(rd "$E/hdmi_hdr_status")
-    _dmode=$(rd "$E/disp_mode")
-    if [ "${HDR_INFOFRAME:-0}" = "1" ] && [ "$_hst" = "DolbyVision-Lowlatency" ]; then
-        _hkey="1|$_hst|$_dmode|$INJECTED"
-        if [ "$_hkey" != "$LAST_HDR_IF_KEY" ] || [ ! -f "$HDR_IF_FILE" ]; then
-            if hdr_if_enable; then
-                LAST_HDR_IF_KEY=$_hkey
-            fi
+    if [ "${HDR_INFOFRAME:-0}" = "1" ]; then
+        if [ "$_hst" = "DolbyVision-Lowlatency" ]; then
+            # Wait 2 s so any in-progress 1.5 s hdr_work_func from hdmitx_set_vsif_pkt() finishes first
+            sleep 2
+            [ "$(rd "$E/hdmi_hdr_status")" = "DolbyVision-Lowlatency" ] && hdr_if_enable
+        elif [ "$_hst" = "SDR" ] && [ -f "$HDR_IF_FILE" ]; then
+            hdr_if_disable
         fi
     else
-        if [ -f "$HDR_IF_FILE" ] || [ -n "$LAST_HDR_IF_KEY" ]; then
-            [ -f "$HDR_IF_FILE" ] && hdr_if_disable "$_hst"
-            LAST_HDR_IF_KEY=""
+        if [ -f "$HDR_IF_FILE" ]; then
+            hdr_if_disable
         fi
     fi
 }

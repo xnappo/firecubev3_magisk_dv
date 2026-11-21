@@ -32,7 +32,7 @@ EDID_LIVE=${LLDV_RAWEDID:-$E/rawedid}
 EDID_PATCHED=${LLDV_PATCHEDEDID:-/dev/lldv_p}
 EDID_ORIG=${LLDV_ORIGEDID:-/dev/lldv_o}
 HDR_IF_FILE=${LLDV_HDR_IF_FILE:-/dev/lldv_hdr_if}
-DEBUG_NODE=${LLDV_DEBUG_NODE:-$E/debug}
+CONFIG_NODE=${LLDV_CONFIG_NODE:-$E/config}
 
 . "$MODDIR/lldv_lum.sh"
 . "$MODDIR/lldv_gamut.sh"
@@ -123,7 +123,7 @@ cmd_show() {
     echo "== display"
     echo "hpd_state  : $(cat $E/hpd_state 2>/dev/null | tr -d '\r\n ')   sink_type: $(cat $E/sink_type 2>/dev/null | tr -d '\r\n ')"
     echo "status     : $(cat $E/hdmi_hdr_status 2>/dev/null | tr -d '\r\n')"
-    [ -f "$HDR_IF_FILE" ] && echo "hdr_if_out : active (Bank 6 SMPTE ST 2084 PQ)"
+    [ -f "$HDR_IF_FILE" ] && echo "hdr_if_out : active (SMPTE ST 2084 PQ via config)"
     echo "dv_cap2    : $(head -1 $E/dv_cap2 2>/dev/null)"
     _v=$(grep -m1 'VSVDB:' $E/dv_cap2 2>/dev/null)
     [ -n "$_v" ] && echo "reported   : ${_v#*VSVDB: }"
@@ -207,17 +207,8 @@ cmd_set() {
             case "$_hv" in
                 1 | on | enabled | true)
                     set_key HDR_INFOFRAME 1
-                    if [ "$(cat "$E/hdmi_hdr_status" 2>/dev/null | tr -d '\r\n')" = "DolbyVision-Lowlatency" ] && [ -e "$DEBUG_NODE" ]; then
-                        echo "wh6bf 6" > "$DEBUG_NODE"
-                        echo "wh6c0 87" > "$DEBUG_NODE"
-                        echo "wh6c1 01" > "$DEBUG_NODE"
-                        echo "wh6c2 1a" > "$DEBUG_NODE"
-                        echo "wh6c3 5c" > "$DEBUG_NODE"
-                        echo "wh6c4 02" > "$DEBUG_NODE"
-                        for _r in 6c5 6c6 6c7 6c8 6c9 6ca 6cb 6cc 6cd 6ce 6cf 6d0 6d1 6d2 6d3 6d4 6d5 6d6 6d7 6d8 6d9 6da 6db 6dc 6dd 6de; do
-                            echo "wh$_r 0" > "$DEBUG_NODE"
-                        done
-                        echo "wh6df e0" > "$DEBUG_NODE"
+                    if [ "$(cat "$E/hdmi_hdr_status" 2>/dev/null | tr -d '\r\n')" = "DolbyVision-Lowlatency" ] && [ -e "$CONFIG_NODE" ]; then
+                        echo hdr > "$CONFIG_NODE"
                         echo 1 > "$HDR_IF_FILE" 2>/dev/null || true
                     fi
                     echo "HDR_INFOFRAME=1 (send HDR10 PQ InfoFrame during LLDV)"
@@ -225,11 +216,7 @@ cmd_set() {
                 0 | off | disabled | false)
                     set_key HDR_INFOFRAME 0
                     if [ -f "$HDR_IF_FILE" ]; then
-                        if [ -e "$DEBUG_NODE" ]; then
-                            echo "wh6bf 6" > "$DEBUG_NODE"
-                            echo "wh6c0 0" > "$DEBUG_NODE"
-                            echo "wh6df 0" > "$DEBUG_NODE"
-                        fi
+                        [ -e "$CONFIG_NODE" ] && echo sdr > "$CONFIG_NODE"
                         rm -f "$HDR_IF_FILE"
                     fi
                     echo "HDR_INFOFRAME=0 (off)"
@@ -270,11 +257,7 @@ cmd_reset() {
         *) die "usage: lldv reset [maxlum|primaries|hdr_infoframe]" ;;
     esac
     if [ "$_clear_hdr_if" = "1" ] && [ -f "$HDR_IF_FILE" ]; then
-        if [ -e "$DEBUG_NODE" ]; then
-            echo "wh6bf 6" > "$DEBUG_NODE"
-            echo "wh6c0 0" > "$DEBUG_NODE"
-            echo "wh6df 0" > "$DEBUG_NODE"
-        fi
+        [ -e "$CONFIG_NODE" ] && echo sdr > "$CONFIG_NODE"
         rm -f "$HDR_IF_FILE"
     fi
     after_change

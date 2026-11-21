@@ -79,10 +79,13 @@ Layout is that of `_edid_parsingvendspec()` in `hdmi_tx_edid.c` (ver 2 branch), 
   CRLF normalization for binary extensions (`BINARY_EXT = {".wasm", ".bin"}`).
 - `module/lldv_watch.sh`: watcher. `check_once` -> `inject_new` (save, patch, load, verify, plug cycle) or
   `inject_changed` (settings changed; patches the saved original `/dev/lldv_o`). Reads settings every pass.
-  When `HDR_INFOFRAME=1`, `sync_hdr_infoframe` enables hardware InfoFrame Bank 6 (`TPI_INFO_FSEL_IVCTX=6`, registers
-  `0x6BF..0x6DF` via `/sys/class/amhdmitx/amhdmitx0/debug` using `wh<hex_reg> <hex_val>`, no space after `wh`) with a
-  CTA-861.3 HDR10 (SMPTE ST 2084 PQ, `87 01 1a 5c 02 00...`) DRM InfoFrame whenever `hdmi_hdr_status` is
-  `DolbyVision-Lowlatency`, and clears Bank 6 when leaving `DolbyVision-Lowlatency` or when `HDR_INFOFRAME=0`.
+  When `HDR_INFOFRAME=1`, `sync_hdr_infoframe` uses the kernel's atomic `config_store` handler (`echo hdr > /sys/class/amhdmitx/amhdmitx0/config`)
+  whenever `hdmi_hdr_status` is `DolbyVision-Lowlatency` (after a 2 s delay so any 1.5 s `hdr_work_func` finishes first),
+  which disables the Dolby Vision VSIF in Bank 8, enables the CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame in Bank 6 +
+  BT.2020 AVI InfoFrame, and sets `hdr_transfer_feature = T_SMPTE_ST_2084` while `amdv` continues outputting 12-bit YCbCr
+  4:2:2 LLDV. **Never** write raw TPI InfoFrame registers via `/sys/class/amhdmitx/amhdmitx0/debug` or read
+  `/sys/kernel/debug/amhdmitx/hdmi_reg` on a live box: `dump_hdmireg_show()` reads every IVCTX register `0x0000..0x0FA9`
+  and loops `TPI_INFO_FSEL_IVCTX` (`0x06BF`) across `0..16`, which wedges the hardware TPI packet transmitter until reboot.
 - `module/lldv_edid.sh` `lldv_patch_edid in out vsvdb` -> `OK` | `PRESENT` | `ERR:...`. Appends the CTA block, fixes
   the count (byte 126; HF-EEODB branch exists but is untested) and checksums.
 - `do_inject` (v0.2.3): after `load`, `dv_cap2` is re-read up to twice, 2 s apart. If the kernel still reports no DV,

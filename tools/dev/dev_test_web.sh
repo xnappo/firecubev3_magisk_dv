@@ -22,9 +22,9 @@ run_cgi() {
     _qs=${4:-}
     _len=${#_body}
     if [ "$_shell" = busybox ]; then
-        printf '%s' "$_body" | REQUEST_METHOD="$_method" QUERY_STRING="$_qs" CONTENT_LENGTH="$_len" LLDV_MODDIR=$M LLDV_OVERRIDE=$O LLDV_HDR_IF_FILE=$T/lldv_web_cgi_hdr_if LLDV_DEBUG_NODE=$T/lldv_web_cgi_dbg ASH_STANDALONE=1 /data/adb/magisk/busybox sh "$M/www/cgi-bin/lldv.cgi"
+        printf '%s' "$_body" | REQUEST_METHOD="$_method" QUERY_STRING="$_qs" CONTENT_LENGTH="$_len" LLDV_MODDIR=$M LLDV_OVERRIDE=$O LLDV_HDR_IF_FILE=$T/lldv_web_cgi_hdr_if LLDV_CONFIG_NODE=$T/lldv_web_cgi_cfg ASH_STANDALONE=1 /data/adb/magisk/busybox sh "$M/www/cgi-bin/lldv.cgi"
     else
-        printf '%s' "$_body" | REQUEST_METHOD="$_method" QUERY_STRING="$_qs" CONTENT_LENGTH="$_len" LLDV_MODDIR=$M LLDV_OVERRIDE=$O LLDV_HDR_IF_FILE=$T/lldv_web_cgi_hdr_if LLDV_DEBUG_NODE=$T/lldv_web_cgi_dbg sh "$M/www/cgi-bin/lldv.cgi"
+        printf '%s' "$_body" | REQUEST_METHOD="$_method" QUERY_STRING="$_qs" CONTENT_LENGTH="$_len" LLDV_MODDIR=$M LLDV_OVERRIDE=$O LLDV_HDR_IF_FILE=$T/lldv_web_cgi_hdr_if LLDV_CONFIG_NODE=$T/lldv_web_cgi_cfg sh "$M/www/cgi-bin/lldv.cgi"
     fi
 }
 _ver=$(grep -m1 '^version=' "$M/module.prop" | tr -d '\r')
