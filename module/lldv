@@ -7,10 +7,12 @@
 #   lldv list                      the selectable maxLum values and colour-primary presets
 #   lldv set maxlum <cd/m2>|0      peak luminance to advertise (nearest of 32 steps; 0 = base block's own value)
 #   lldv set primaries <preset>    BT709 | BT2020 | DCI-P3 | LS12000 | base (= the base block's own primaries)
+#   lldv set hdr_infoframe on|off  send a CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame in Bank 6 during LLDV
 #   lldv set web enabled[:port]    write WEB=1 and WEB_PORT=port to /data/adb/lldv.conf (default port 18765;
 #                                  the page starts at the next reboot, or via lldv_web.sh)
 #   lldv cycle                     next primaries preset: base > BT709 > BT2020 > DCI-P3 > LS12000 > base
-#   lldv reset [maxlum|primaries]  remove the override(s); the module's lldv.conf defaults apply again
+#   lldv reset [maxlum|primaries|hdr_infoframe]
+#                                  remove the override(s); the module's lldv.conf defaults apply again
 #   lldv edid [orig]               the EDID as hex, 16 bytes per line, ready to paste into an EDID analyzer.
 #                                  Default = the live EDID the kernel holds now (includes the injected block);
 #                                  `orig` = the display's own EDID as the module saved it before injecting.
@@ -29,6 +31,8 @@ LOG=${LLDV_LOG:-/data/local/tmp/lldv.log}
 EDID_LIVE=${LLDV_RAWEDID:-$E/rawedid}
 EDID_PATCHED=${LLDV_PATCHEDEDID:-/dev/lldv_p}
 EDID_ORIG=${LLDV_ORIGEDID:-/dev/lldv_o}
+HDR_IF_FILE=${LLDV_HDR_IF_FILE:-/dev/lldv_hdr_if}
+DEBUG_NODE=${LLDV_DEBUG_NODE:-$E/debug}
 
 . "$MODDIR/lldv_lum.sh"
 . "$MODDIR/lldv_gamut.sh"
@@ -106,6 +110,11 @@ cmd_show() {
     else
         echo "maxlum     : base block's own"
     fi
+    if [ "${HDR_INFOFRAME:-0}" = "1" ]; then
+        echo "hdr_if     : 1 (send HDR10 PQ InfoFrame during LLDV)"
+    else
+        echo "hdr_if     : 0 (off)"
+    fi
     echo "effective  : $VSVDB_EFF"
     [ -n "$CFG_ERRORS" ] && echo "WARNING    :$CFG_ERRORS"
     [ -n "$LLDV_CFG_WARN" ] && echo "WARNING    : $LLDV_CFG_WARN"
@@ -114,6 +123,7 @@ cmd_show() {
     echo "== display"
     echo "hpd_state  : $(cat $E/hpd_state 2>/dev/null | tr -d '\r\n ')   sink_type: $(cat $E/sink_type 2>/dev/null | tr -d '\r\n ')"
     echo "status     : $(cat $E/hdmi_hdr_status 2>/dev/null | tr -d '\r\n')"
+    [ -f "$HDR_IF_FILE" ] && echo "hdr_if_out : active (Bank 6 SMPTE ST 2084 PQ)"
     echo "dv_cap2    : $(head -1 $E/dv_cap2 2>/dev/null)"
     _v=$(grep -m1 'VSVDB:' $E/dv_cap2 2>/dev/null)
     [ -n "$_v" ] && echo "reported   : ${_v#*VSVDB: }"
@@ -191,7 +201,44 @@ cmd_set() {
             fi
             after_change
             ;;
-        *) die "usage: lldv set maxlum <cd/m2>|0   or   lldv set primaries <preset>   or   lldv set web enabled[:port]" ;;
+        hdr_infoframe | hdr-infoframe | hdrinfoframe | hdr_if)
+            [ -n "$2" ] || die "usage: lldv set hdr_infoframe on|off"
+            _hv=$(echo "$2" | tr 'A-Z' 'a-z')
+            case "$_hv" in
+                1 | on | enabled | true)
+                    set_key HDR_INFOFRAME 1
+                    if [ "$(cat "$E/hdmi_hdr_status" 2>/dev/null | tr -d '\r\n')" = "DolbyVision-Lowlatency" ] && [ -e "$DEBUG_NODE" ]; then
+                        echo "wh6bf 6" > "$DEBUG_NODE"
+                        echo "wh6c0 87" > "$DEBUG_NODE"
+                        echo "wh6c1 01" > "$DEBUG_NODE"
+                        echo "wh6c2 1a" > "$DEBUG_NODE"
+                        echo "wh6c3 5c" > "$DEBUG_NODE"
+                        echo "wh6c4 02" > "$DEBUG_NODE"
+                        for _r in 6c5 6c6 6c7 6c8 6c9 6ca 6cb 6cc 6cd 6ce 6cf 6d0 6d1 6d2 6d3 6d4 6d5 6d6 6d7 6d8 6d9 6da 6db 6dc 6dd 6de; do
+                            echo "wh$_r 0" > "$DEBUG_NODE"
+                        done
+                        echo "wh6df e0" > "$DEBUG_NODE"
+                        echo 1 > "$HDR_IF_FILE" 2>/dev/null || true
+                    fi
+                    echo "HDR_INFOFRAME=1 (send HDR10 PQ InfoFrame during LLDV)"
+                    ;;
+                0 | off | disabled | false)
+                    set_key HDR_INFOFRAME 0
+                    if [ -f "$HDR_IF_FILE" ]; then
+                        if [ -e "$DEBUG_NODE" ]; then
+                            echo "wh6bf 6" > "$DEBUG_NODE"
+                            echo "wh6c0 0" > "$DEBUG_NODE"
+                            echo "wh6df 0" > "$DEBUG_NODE"
+                        fi
+                        rm -f "$HDR_IF_FILE"
+                    fi
+                    echo "HDR_INFOFRAME=0 (off)"
+                    ;;
+                *) die "usage: lldv set hdr_infoframe on|off" ;;
+            esac
+            after_change
+            ;;
+        *) die "usage: lldv set maxlum <cd/m2>|0   or   lldv set primaries <preset>   or   lldv set hdr_infoframe on|off   or   lldv set web enabled[:port]" ;;
     esac
 }
 
@@ -210,12 +257,26 @@ cmd_cycle() {
 
 cmd_reset() {
     need_root
+    _clear_hdr_if=0
     case "$1" in
-        "") rm -f "$OVERRIDE"; echo "removed $OVERRIDE" ;;
+        "") rm -f "$OVERRIDE"; _clear_hdr_if=1; echo "removed $OVERRIDE" ;;
         maxlum) drop_key MAXLUM; echo "MAXLUM override removed" ;;
         primaries) drop_key PRIMARIES; echo "PRIMARIES override removed" ;;
-        *) die "usage: lldv reset [maxlum|primaries]" ;;
+        hdr_infoframe | hdr-infoframe | hdrinfoframe | hdr_if)
+            drop_key HDR_INFOFRAME
+            _clear_hdr_if=1
+            echo "HDR_INFOFRAME override removed"
+            ;;
+        *) die "usage: lldv reset [maxlum|primaries|hdr_infoframe]" ;;
     esac
+    if [ "$_clear_hdr_if" = "1" ] && [ -f "$HDR_IF_FILE" ]; then
+        if [ -e "$DEBUG_NODE" ]; then
+            echo "wh6bf 6" > "$DEBUG_NODE"
+            echo "wh6c0 0" > "$DEBUG_NODE"
+            echo "wh6df 0" > "$DEBUG_NODE"
+        fi
+        rm -f "$HDR_IF_FILE"
+    fi
     after_change
 }
 

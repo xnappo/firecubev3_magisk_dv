@@ -14,6 +14,7 @@ LLDV_CFG_WARN=
 VSVDB=eb0146d0004903485798a953
 MAXLUM=385
 PRIMARIES=
+HDR_INFOFRAME=0
 POLL=2
 SETTLE=3
 HOLDOFF=15
@@ -61,4 +62,11 @@ lldv_effective() {
             *) VSVDB_EFF=$_e ;;
         esac
     fi
+    case "${HDR_INFOFRAME:-0}" in
+        0 | 1) HDR_INFOFRAME=${HDR_INFOFRAME:-0} ;;
+        *)
+            CFG_ERRORS="$CFG_ERRORS HDR_INFOFRAME=$HDR_INFOFRAME ignored: must be 0 or 1;"
+            HDR_INFOFRAME=0
+            ;;
+    esac
 }

@@ -24,6 +24,7 @@ PIDF=/dev/lldv_watch.pid
 SAVED=/dev/ed
 PATCHED=/dev/lldv_p
 ORIG=/dev/lldv_o
+HDR_IF_FILE=${LLDV_HDR_IF_FILE:-/dev/lldv_hdr_if}
 CMD_SAVE='save bin /dev/ed'
 CMD_LOAD_PATCHED='load /dev/lldv_p'
 CMD_LOAD_ORIG='load /dev/lldv_o'
@@ -46,7 +47,7 @@ log() {
 _CFG_KEY=""
 reload_cfg() {
     . "$MODDIR/lldv_cfg.sh"
-    _key="${VSVDB}|${PRIMARIES}|${MAXLUM}"
+    _key="${VSVDB}|${PRIMARIES}|${MAXLUM}|${HDR_INFOFRAME}"
     if [ "$_key" != "$_CFG_KEY" ]; then
         lldv_effective
         _CFG_KEY="$_key"
@@ -122,6 +123,60 @@ plug_cycle() {
     echo 1 > "$E/fake_plug"
 }
 
+# Writes a CTA-861.3 HDR10 (SMPTE ST 2084 PQ, EOTF=2) DRM InfoFrame into hardware InfoFrame Bank 6
+# (TPI_INFO_FSEL_IVCTX=6, registers 0x6BF..0x6DF) so HDR10-only displays switch to HDR EOTF during LLDV.
+hdr_if_enable() {
+    _dbg=${LLDV_DEBUG_NODE:-$E/debug}
+    [ -e "$_dbg" ] || return 1
+    echo "wh6bf 6" > "$_dbg"
+    echo "wh6c0 87" > "$_dbg"
+    echo "wh6c1 01" > "$_dbg"
+    echo "wh6c2 1a" > "$_dbg"
+    echo "wh6c3 5c" > "$_dbg"
+    echo "wh6c4 02" > "$_dbg"
+    for _r in 6c5 6c6 6c7 6c8 6c9 6ca 6cb 6cc 6cd 6ce 6cf 6d0 6d1 6d2 6d3 6d4 6d5 6d6 6d7 6d8 6d9 6da 6db 6dc 6dd 6de; do
+        echo "wh$_r 0" > "$_dbg"
+    done
+    echo "wh6df e0" > "$_dbg"
+    echo 1 > "$HDR_IF_FILE"
+    log "HDR10 InfoFrame enabled (Bank 6: SMPTE ST 2084 PQ)"
+    return 0
+}
+
+hdr_if_disable() {
+    _dbg=${LLDV_DEBUG_NODE:-$E/debug}
+    if [ -e "$_dbg" ]; then
+        case "$1" in
+            HDR10*) ;;
+            *)
+                echo "wh6bf 6" > "$_dbg"
+                echo "wh6c0 0" > "$_dbg"
+                echo "wh6df 0" > "$_dbg"
+                ;;
+        esac
+    fi
+    rm -f "$HDR_IF_FILE"
+    log "HDR10 InfoFrame disabled"
+}
+
+sync_hdr_infoframe() {
+    _hst=$(rd "$E/hdmi_hdr_status")
+    _dmode=$(rd "$E/disp_mode")
+    if [ "${HDR_INFOFRAME:-0}" = "1" ] && [ "$_hst" = "DolbyVision-Lowlatency" ]; then
+        _hkey="1|$_hst|$_dmode|$INJECTED"
+        if [ "$_hkey" != "$LAST_HDR_IF_KEY" ] || [ ! -f "$HDR_IF_FILE" ]; then
+            if hdr_if_enable; then
+                LAST_HDR_IF_KEY=$_hkey
+            fi
+        fi
+    else
+        if [ -f "$HDR_IF_FILE" ] || [ -n "$LAST_HDR_IF_KEY" ]; then
+            [ -f "$HDR_IF_FILE" ] && hdr_if_disable "$_hst"
+            LAST_HDR_IF_KEY=""
+        fi
+    fi
+}
+
 # Patches the EDID file $1 with VSVDB_EFF, loads it, checks the kernel now reports DV, cycles the plug.
 # $2 = what happened, for the log. On failure the display's original EDID is loaded again.
 do_inject() {
@@ -150,6 +205,8 @@ do_inject() {
         if sink_has_dv; then
             plug_cycle
             INJECTED=$VSVDB_EFF
+            LAST_HDR_IF_KEY=""
+            rm -f "$HDR_IF_FILE"
             log "$2 Dolby VSVDB $VSVDB_EFF (EDID now $(wc -c < "$PATCHED") bytes, kernel reports $(vsvdb_now)) and cycled fake_plug"
             return 0
         fi
@@ -194,6 +251,7 @@ check_once() {
     [ "$(rd "$E/hpd_state")" = "1" ] || return 1
     # hdr_priority_mode != 0 deliberately hides DV (dv_cap and dv_cap2); respect it
     [ "$(rd "$E/hdr_priority_mode")" = "0" ] || return 1
+    sync_hdr_infoframe
 
     if sink_has_dv; then
         # Only ever touch a DV block that we injected ourselves (reported VSVDB == what we injected), and
@@ -208,6 +266,7 @@ check_once() {
             fi
             sleep "$HOLDOFF"
         fi
+        sync_hdr_infoframe
         return 1
     fi
     have_edid || return 1
@@ -230,6 +289,7 @@ check_once() {
     fi
     # hold off before the next attempt whatever happened, so a misbehaving sink cannot cause a tight loop
     sleep "$HOLDOFF"
+    sync_hdr_infoframe
     [ "$LAST_FAIL" = "" ]
 }
 
@@ -249,6 +309,7 @@ guard_clear_if_stable() {
 LAST_FAIL=""
 LAST_CHANGE_FAIL=""
 LAST_CFG_MSG=""
+LAST_HDR_IF_KEY=""
 INJECTED=""
 GUARD_CLEARED=0
 

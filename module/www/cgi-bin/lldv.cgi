@@ -27,6 +27,7 @@ page() {
     _esc=$($BB httpd -e "$_show")
     _msg_esc=$($BB httpd -e "$_msg")
     _cur_p=${PRIMARIES:-base}
+    _cur_h=${HDR_INFOFRAME:-0}
     _cur_m=0
     if [ -n "$MAXLUM" ] && [ "$MAXLUM" != "0" ]; then
         _lm=$(lldv_lum_nearest "$MAXLUM")
@@ -84,6 +85,10 @@ HTML
     for _m in $LLDV_LUM_NITS; do
         printf '<option value="%s"%s>%s cd/m2</option>' "$_m" "$(selected "$_m" "$_cur_m")" "$_m"
     done
+    printf '</select>\n'
+    printf '<label for="hdr_infoframe">HDR10 InfoFrame (force display HDR EOTF)</label><select id="hdr_infoframe" name="hdr_infoframe">'
+    printf '<option value="0"%s>off (display switches on DV VSIF or manual HDR)</option>' "$(selected 0 "$_cur_h")"
+    printf '<option value="1"%s>on (send HDR10 PQ InfoFrame during LLDV)</option>' "$(selected 1 "$_cur_h")"
     printf '</select><div class="actions"><button class="btn btn-primary" type="submit">Apply settings</button></div></form>\n'
     printf '%s\n' '<hr><form method="post" action="/cgi-bin/lldv.cgi"><input type="hidden" name="action" value="reset"><div class="actions"><button class="btn btn-ghost" type="submit">Reset overrides</button></div></form>'
     printf '%s\n' '<p class="helper">Changes use the existing <code>lldv</code> command and are applied by the watcher within seconds (the screen may blink once).</p></div>'
@@ -242,12 +247,13 @@ case "${REQUEST_METHOD:-GET}" in
         case "$_len" in ''|*[!0-9]*) _len=0 ;; esac
         [ "$_len" -le 4096 ] || { printf 'Status: 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nRequest too large\n'; exit 0; }
         _body=$(dd bs=1 count="$_len" 2>/dev/null)
-        _action= _p= _m=
+        _action= _p= _m= _h=
         for _kv in $(printf '%s' "$_body" | tr '&' ' '); do
             case "$_kv" in
                 action=*) _action=${_kv#action=} ;;
                 primaries=*) _p=${_kv#primaries=} ;;
                 maxlum=*) _m=${_kv#maxlum=} ;;
+                hdr_infoframe=*) _h=${_kv#hdr_infoframe=} ;;
             esac
         done
         case "$_action" in
@@ -260,8 +266,12 @@ case "${REQUEST_METHOD:-GET}" in
                 if [ "$_m" != "0" ]; then
                     case " $LLDV_LUM_NITS " in *" $_m "*) ;; *) page "Invalid maxLum value"; exit 0 ;; esac
                 fi
+                case "$_h" in ''|0|1) ;; *) page "Invalid HDR10 InfoFrame value"; exit 0 ;; esac
                 sh "$L" set primaries "$_p" >/dev/null 2>&1 || { page "Could not set primaries"; exit 0; }
                 sh "$L" set maxlum "$_m" >/dev/null 2>&1 || { page "Could not set maxLum"; exit 0; }
+                if [ -n "$_h" ]; then
+                    sh "$L" set hdr_infoframe "$_h" >/dev/null 2>&1 || { page "Could not set HDR10 InfoFrame"; exit 0; }
+                fi
                 redirect
                 ;;
             *) page "Unsupported action" ;;

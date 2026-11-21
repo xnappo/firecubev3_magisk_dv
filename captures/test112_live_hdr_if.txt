@@ -1,0 +1,85 @@
+=== ENABLE HDR_INFOFRAME ===
+HDR_INFOFRAME=1 (send HDR10 PQ InfoFrame during LLDV)
+effective VSVDB now: eb0146d000490348a15855a2
+the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)
+version    : v0.3.4
+== settings (defaults < /data/adb/modules/firecube_lldv/lldv.conf < /data/adb/lldv.conf)
+base VSVDB : eb0146d0004903485798a953
+primaries  : LS12000
+maxlum     : 372 -> code 9 = 372 cd/m2
+hdr_if     : 1 (send HDR10 PQ InfoFrame during LLDV)
+effective  : eb0146d000490348a15855a2
+override   : /data/adb/lldv.conf: MAXLUM=372 PRIMARIES=LS12000 WEB=1 WEB_PORT=18765 HDR_INFOFRAME=1 
+
+== display
+hpd_state  : 1   sink_type: repeater
+status     : DolbyVision-Lowlatency
+hdr_if_out : active (Bank 6 SMPTE ST 2084 PQ)
+dv_cap2    : The Rx don't support DolbyVision
+
+== watcher
+running, pid 24451
+
+== last log lines
+11-21 09:28:35 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+11-21 10:00:38 watcher started (pid 23806, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372, effective vsvdb eb0146d000490348a15855a2)
+11-21 10:00:38 boot guard: stable for 5 minutes, counter cleared
+11-21 10:02:14 watcher started (pid 24451, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372, effective vsvdb eb0146d000490348a15855a2)
+11-21 10:02:15 boot guard: stable for 5 minutes, counter cleared
+11-21 10:02:19 HDR10 InfoFrame enabled (Bank 6: SMPTE ST 2084 PQ)
+dump hdmi infoframe[0]
+82020d3230a80461
+0000000000000000
+0000000000000000
+00000000000000e0
+--
+dump hdmi infoframe[6]
+87011a5c02000000
+0000000000000000
+0000000000000000
+00000000000000c0
+--
+dump hdmi infoframe[8]
+81011b4a46d00003
+0000000000000000
+0000000000000000
+0000000000000020
+=== DISABLE / RESET HDR_INFOFRAME ===
+HDR_INFOFRAME override removed
+effective VSVDB now: eb0146d000490348a15855a2
+the watcher applies this within a few seconds if the display is being handled by the module (the screen blinks once)
+version    : v0.3.4
+== settings (defaults < /data/adb/modules/firecube_lldv/lldv.conf < /data/adb/lldv.conf)
+base VSVDB : eb0146d0004903485798a953
+primaries  : LS12000
+maxlum     : 372 -> code 9 = 372 cd/m2
+hdr_if     : 0 (off)
+effective  : eb0146d000490348a15855a2
+override   : /data/adb/lldv.conf: MAXLUM=372 PRIMARIES=LS12000 WEB=1 WEB_PORT=18765 
+
+== display
+hpd_state  : 1   sink_type: repeater
+status     : DolbyVision-Lowlatency
+dv_cap2    : The Rx don't support DolbyVision
+
+== watcher
+running, pid 24451
+
+== last log lines
+11-21 09:28:35 injected Dolby VSVDB eb0146d000490348a15855a2 (EDID now 384 bytes, kernel reports eb0146d000490348a15855a2) and cycled fake_plug
+11-21 10:00:38 watcher started (pid 23806, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372, effective vsvdb eb0146d000490348a15855a2)
+11-21 10:00:38 boot guard: stable for 5 minutes, counter cleared
+11-21 10:02:14 watcher started (pid 24451, poll 2s, settle 3s, holdoff 15s, base vsvdb eb0146d0004903485798a953, primaries LS12000, maxlum 372, effective vsvdb eb0146d000490348a15855a2)
+11-21 10:02:15 boot guard: stable for 5 minutes, counter cleared
+11-21 10:02:19 HDR10 InfoFrame enabled (Bank 6: SMPTE ST 2084 PQ)
+dump hdmi infoframe[6]
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+--
+dump hdmi infoframe[8]
+81011b4a46d00003
+0000000000000000
+0000000000000000
+0000000000000020

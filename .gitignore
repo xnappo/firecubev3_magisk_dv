@@ -51,6 +51,9 @@ captures/*
 !captures/test107_web_v032.txt
 !captures/test108_web_edid.txt
 !captures/test109_units_standby.txt
+!captures/test110_units_hdr_if.txt
+!captures/test111_web_hdr_if.txt
+!captures/test112_live_hdr_if.txt
 
 *.tmp
 *.log

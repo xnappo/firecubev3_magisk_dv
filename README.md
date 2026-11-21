@@ -72,9 +72,10 @@ The `lldv` command (run as root) changes them. The running watcher picks the cha
 | `lldv list` | the selectable maxLum values and primaries presets |
 | `lldv set maxlum <cd/m2>` | peak luminance; snaps to the nearest of 32 steps; `0` keeps the base block's value |
 | `lldv set primaries <name>` | `BT709`, `BT2020`, `DCI-P3`, `LS12000`, or `base` (keeps the base block's primaries, which are `BT2020` by default) |
+| `lldv set hdr_infoframe on\|off` | send a CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame in hardware Bank 6 whenever the Cube outputs LLDV (`off` by default) |
 | `lldv set web enabled[:port]` | enable the browser UI; optional port defaults to `18765` and is written to `/data/adb/lldv.conf` |
 | `lldv cycle` | next primaries preset |
-| `lldv reset [maxlum\|primaries]` | remove the override(s) |
+| `lldv reset [maxlum\|primaries\|hdr_infoframe]` | remove the override(s) |
 | `lldv edid [orig]` | the EDID as hex, 16 bytes per line, to paste into an EDID analyzer (see below) |
 | `lldv log [n]` | tail of `/data/local/tmp/lldv.log` |
 
@@ -125,8 +126,24 @@ With the default base block, `BT2020` therefore gives the same VSVDB as `base` (
 Each coordinate has a limited reachable range in a v2 block (blue only 8 steps per axis); see
 `module/lldv_gamut.sh`. The v2 block has no white-point field.
 
-You can also edit `/data/adb/lldv.conf` by hand (`VSVDB=`, `MAXLUM=`, `PRIMARIES=`, `POLL=`, `SETTLE=`,
-`HOLDOFF=`). It is sourced as shell, so it is ignored unless owned by root and not group/world-writable.
+You can also edit `/data/adb/lldv.conf` by hand (`VSVDB=`, `MAXLUM=`, `PRIMARIES=`, `HDR_INFOFRAME=`, `POLL=`,
+`SETTLE=`, `HOLDOFF=`). It is sourced as shell, so it is ignored unless owned by root and not group/world-writable.
+
+### Forcing the display's HDR EOTF (HDR10 InfoFrame)
+
+Spoofing LLDV has two sides:
+1. **The player (Cube)** sees the injected Dolby Vision VSVDB in the EDID and outputs player-led LLDV (12-bit YCbCr 4:2:2, BT.2020, dynamically tone-mapped to `maxLum`) with a Dolby Vision Vendor-Specific InfoFrame (VSIF, OUI `00-D0-46`) in hardware InfoFrame Bank 8.
+2. **The display** needs to use its HDR (SMPTE ST 2084 PQ) EOTF curve. Because `hdmitx_set_vsif_pkt()` disables hardware InfoFrame Bank 6 (the standard CTA-861.3 HDR10 Dynamic Range & Mastering InfoFrame) when entering LLDV, an HDR10-only display that ignores the Dolby VSIF will stay in SDR unless you either force HDR EOTF on the display (e.g. Epson LS12000) or send an HDR10 DRM InfoFrame alongside the LLDV signal (what an external HDFury box does).
+
+On the Cube 3, the HDMI transmitter (`hdmitx21`) has independent hardware InfoFrame banks (`TPI_INFO_FSEL_IVCTX`, registers `0x06BF..0x06DF`), so **Bank 6 (HDR10 DRM InfoFrame) and Bank 8 (Dolby Vision LL VSIF) can transmit simultaneously**. If your display cannot manually force its HDR EOTF, enable `HDR_INFOFRAME`:
+
+```
+su -c '/data/adb/modules/firecube_lldv/lldv set hdr_infoframe on'
+```
+
+(or set **HDR10 InfoFrame** to `on` in the browser UI). When enabled (`HDR_INFOFRAME=1`, off by default), the watcher monitors `/sys/class/amhdmitx/amhdmitx0/hdmi_hdr_status`:
+- Whenever `hdmi_hdr_status` is `DolbyVision-Lowlatency`, it loads a CTA-861.3 HDR10 DRM InfoFrame (`87 01 1a 5c 02 00 ...`, `EOTF = 2` SMPTE ST 2084 PQ, static metadata left `0` = unspecified so the display does not double-tone-map the already-tone-mapped LLDV signal) into Bank 6 and enables hardware repeat (`0xE0`).
+- When `hdmi_hdr_status` leaves `DolbyVision-Lowlatency` (e.g. switches to `SDR` in adaptive mode) or when you run `lldv set hdr_infoframe off`, Bank 6 is cleared back to `0`.
 
 ### Optional browser UI
 
@@ -151,7 +168,7 @@ Reboot, or start it immediately with `su -c 'sh /data/adb/modules/firecube_lldv/
 `http://<cube-address>:18765/` in a phone, tablet or PC browser.
 
 The page includes:
-- **Settings**: Primaries (`base (BT2020)`, `BT709`, `BT2020`, `DCI-P3`, `LS12000`) and Max luminance (`0` or any of the 32 steps), plus a **Reset overrides** button.
+- **Settings**: Primaries (`base (BT2020)`, `BT709`, `BT2020`, `DCI-P3`, `LS12000`), Max luminance (`0` or any of the 32 steps), and HDR10 InfoFrame (`off` or `on`), plus a **Reset overrides** button.
 - **Current status**: Full `lldv show` output (version, settings, display state, watcher PID, and recent log lines).
 - **EDID Analyzer (`edid-decode`)**: Bundles the WebAssembly build of `v4l-utils` [`edid-decode`](https://hverkuil.home.xs4all.nl/edid-decode/edid-decode.html) (`edid-decode.js` + `edid-decode.wasm`) locally in `module/www/` so your browser decodes the **Live EDID** or **Original EDID** (or any pasted hex) inline on the page with zero copy-paste and zero CPU load on the Cube.
 
@@ -173,10 +190,11 @@ Tested on the Cube:
 | Live settings change (`lldv set`, `lldv cycle`) | each change re-injected the new block, no reboot |
 | All four primaries presets and maxLum (v0.2.2) | the VSVDB the kernel reports matches the expected bytes for every preset, DCI-P3 + maxLum 1000 and a bad preset name (`captures/test82_watch4_v022.txt`) |
 | Boot-loop guard counting and its 5-minute clear | real boots |
-| Shell code on the device (v0.3.4) | 97 unit checks pass under both the adb shell and Magisk's busybox ash, including `lldv show` version output, `lldv set web enabled[:port]`, `lldv edid` standby fallback, and the watcher's sysfs readers on CRLF, empty and missing files (`captures/test109_units_standby.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
+| Shell code on the device (v0.3.4) | 104 unit checks pass under both the adb shell and Magisk's busybox ash, including `lldv show` version output, `lldv set web enabled[:port]`, `lldv set hdr_infoframe on\|off`, `lldv edid` standby fallback, and the watcher's sysfs readers on CRLF, empty and missing files (`captures/test110_units_hdr_if.txt`); 17 primaries checks pass (`captures/test81_gamut_v022.txt`, the primaries code is unchanged since v0.2.2) |
 | Action button (v0.2.3+) | prints the version, settings, status, log and example commands, and leaves `/data/adb/lldv.conf` unchanged (`captures/test95_action_v023.txt`) |
 | Watcher pass on the new code (v0.2.3) | a single `--once` pass under both shells reads the display state and exits cleanly (`captures/test97_once_v023.txt`) |
-| Browser UI (v0.3.x) | GET/POST and `?edid=live`/`?edid=orig` work from the PC; version heading and EDID analyzer card verified; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`, `test107_web_v032.txt`, `test108_web_edid.txt`) |
+| Browser UI (v0.3.x) | GET/POST (including `hdr_infoframe`) and `?edid=live`/`?edid=orig` work from the PC; version heading and EDID analyzer card verified; invalid values are rejected; reset and duplicate-start protection work; CGI passes under both shells and the real override is unchanged (`captures/test98_web_v030.txt`, `test102_web_v031.txt`, `test107_web_v032.txt`, `test108_web_edid.txt`, `test111_web_hdr_if.txt`) |
+| HDR10 InfoFrame injection (v0.3.4) | `lldv set hdr_infoframe on` / watcher enables hardware InfoFrame Bank 6 (`87 01 1a 5c 02 ...`) alongside Bank 8 (Dolby Vision LL VSIF) while `hdmi_hdr_status` remains `DolbyVision-Lowlatency`, and `reset hdr_infoframe` clears Bank 6 back to `0` (`captures/test112_live_hdr_if.txt`) |
 | Browser UI boot tests (v0.3.x) | real reboots with `WEB=1`: the listener starts from `service.sh`, one watcher and one `httpd`; a browser POST changed primaries and the watcher re-injected the matching VSVDB; config then restored and the listener stopped (v0.3.0: `captures/test100_boot_web_v030.txt`, `test101_restore_v030.txt`; v0.3.1, no auth: `test104_boot_web_v031.txt`, `test105_restore_v031.txt`) |
 | `lldv edid` | output round-trips byte-for-byte to the EDID file the watcher loaded and to the saved original |
 
@@ -226,7 +244,7 @@ crash. The EDID route needs none of that.
 
 | Version | Changes |
 |---|---|
-| v0.3.4 | Browser UI: styled with dark slate theme and bundled local `edid-decode` WebAssembly (`edid-decode.js` + `edid-decode.wasm`) to decode the live or original EDID inline on the page. `lldv edid` now falls back to `/dev/lldv_p` when the kernel's `rawedid` is all zeros in standby (97 unit checks per shell). |
+| v0.3.4 | Browser UI: styled with dark slate theme, 64×64 favicon, and bundled local `edid-decode` WebAssembly (`edid-decode.js` + `edid-decode.wasm`) to decode the live or original EDID inline on the page. Added optional `HDR_INFOFRAME=1` (`lldv set hdr_infoframe on\|off` and Web UI dropdown) to transmit a CTA-861.3 HDR10 (SMPTE ST 2084 PQ) DRM InfoFrame in hardware Bank 6 during LLDV so HDR10-only displays automatically switch into HDR mode. `lldv edid` now falls back to `/dev/lldv_p` when the kernel's `rawedid` is all zeros in standby (104 unit checks per shell). |
 | v0.3.3 | Added module version display to `lldv show` and the browser UI heading; added `lldv set web enabled:18765` to the Action button and installer command hints; added unit tests for `lldv set web` and version output (94 checks per shell). |
 | v0.3.2 | `lldv set web enabled[:port]` creates `/data/adb/lldv.conf` with `WEB=1` and `WEB_PORT=<port>`, preserving existing settings. Port defaults to 18765 and must be 1024–65535. |
 | v0.3.1 | Browser UI: authentication removed (the page now has no login at all, for trusted local networks only). BusyBox `httpd` requirement documented in Requirements. |
